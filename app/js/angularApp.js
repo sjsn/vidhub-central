@@ -8,9 +8,9 @@ app.config(["$stateProvider", "$urlRouterProvider",
 	function($stateProvider, $urlRouterProvider) {
 
 		$stateProvider.state(
-			"home", {
+			"feed", {
 				url: "/",
-				templateUrl: "partials/home.html",
+				templateUrl: "partials/feed.html",
 				controller: "HomeCtrl"
 			}
 		).state(
@@ -88,7 +88,7 @@ app.factory("channelService", [function() {
 				}
 			};
 			var index = getChannelIndex(channel);
-			if (count <= 10 || data[index].favorite) {
+			if (count <= 11 || data[index].favorite) {
 				data[index].favorite = !data[index].favorite;
 			} else {
 				console.log("Too many favorites");
@@ -123,27 +123,26 @@ app.controller("MainCtrl", ["$scope", "channelService", function($scope, channel
 
 	// Temp variable holding fake channel data
 	channelService.setChannels([
-		{name: "PewDiePie", subscribers: 40000000, service: "YouTube", favorite: true, tags: ["#minecraft", "#horror", "#gaming"]},
-		{name: "Yogscast", subscribers: 10000, service: "YouTube", favorite: false, tags: ["#minecraft", "#gta", "#gaming"]},
-		{name: "Sips", subscribers: 125, service: "YouTube", favorite: false, tags: []},
-		{name: "Grubby", subscribers: 23415, service: "Twitch", favorite: false, tags: []},
-		{name: "collegedropouts", subscribers: 123535, service: "YouTube", favorite: true, tags: []},
-		{name: "sam", subscribers: 87654, service: "YouTube", favorite: false, tags: []},
-		{name: "david", subscribers: 623465, service: "YouTube", favorite: true, tags: []},
-		{name: "erica", subscribers: 4325, service: "YouTube", favorite: false, tags: []},
-		{name: "prankvprank", subscribers: 72454, service: "YouTube", favorite: true, tags: []},
-		{name: "caseyneistat", subscribers: 345221, service: "Twitch", favorite: false, tags: ["#vlog", "#cool"]},
-		{name: "boardguy420", subscribers: 2346347, service: "YouTube", favorite: true, tags: []},
-		{name: "brodiesmith21", subscribers: 234647, service: "YouTube", favorite: false, tags: ["#vlog", "#frisbee", "#sports"]},
-		{name: "waterisgood", subscribers: 245, service: "YouTube", favorite: false, tags: []},
-		{name: "sciencerulez", subscribers: 135245, service: "YouTube", favorite: true, tags: ["#science", "#education"]},
-		{name: "hotsnews", subscribers: 23452, service: "Twitch", favorite: true, tags: []},
-		{name: "Alphadog", subscribers: 6542, service: "YouTube", favorite: false, tags: []},
-		{name: "UWEdu", subscribers: 13241, service: "Twitch", favorite: false, tags: []},
-		{name: "BinDer", subscribers: 90, service: "YouTube", favorite: false, tags: []},
-		{name: "Personify", subscribers: 13, service: "YouTube", favorite: true, tags: []}		
+		{name: "PewDiePie", subscribers: 40000000, service: "YouTube", favorite: true, tags: ["#minecraft", "#horror", "#gaming"], activities: [{name: "made a video", date: "1/1/16"}, {name: "livestreamed", date: "2/2/16"}]},
+		{name: "Yogscast", subscribers: 10000, service: "YouTube", favorite: false, tags: ["#minecraft", "#gta", "#gaming"], activites: []},
+		{name: "Sips", subscribers: 125, service: "YouTube", favorite: false, tags: [], activities: []},
+		{name: "Grubby", subscribers: 23415, service: "Twitch", favorite: false, tags: [], activities: []},
+		{name: "collegedropouts", subscribers: 123535, service: "YouTube", favorite: true, tags: [], activities: []},
+		{name: "sam", subscribers: 87654, service: "YouTube", favorite: false, tags: [], activities: []},
+		{name: "david", subscribers: 623465, service: "YouTube", favorite: true, tags: [], activities: []},
+		{name: "erica", subscribers: 4325, service: "YouTube", favorite: false, tags: [], activities: []},
+		{name: "prankvprank", subscribers: 72454, service: "YouTube", favorite: true, tags: [], activities: []},
+		{name: "caseyneistat", subscribers: 345221, service: "Twitch", favorite: false, tags: ["#vlog", "#cool"], activities: []},
+		{name: "boardguy420", subscribers: 2346347, service: "YouTube", favorite: true, tags: [], activities: []},
+		{name: "brodiesmith21", subscribers: 234647, service: "YouTube", favorite: false, tags: ["#vlog", "#frisbee", "#sports"], activities: []},
+		{name: "waterisgood", subscribers: 245, service: "YouTube", favorite: false, tags: [], activities: []},
+		{name: "sciencerulez", subscribers: 135245, service: "YouTube", favorite: true, tags: ["#science", "#education"], activities: []},
+		{name: "hotsnews", subscribers: 23452, service: "Twitch", favorite: true, tags: [], activities: []},
+		{name: "Alphadog", subscribers: 6542, service: "YouTube", favorite: false, tags: [], activities: []},
+		{name: "UWEdu", subscribers: 13241, service: "Twitch", favorite: false, tags: [], activities: []},
+		{name: "BinDer", subscribers: 90, service: "YouTube", favorite: false, tags: [], activities: []},
+		{name: "Personify", subscribers: 13, service: "YouTube", favorite: true, tags: [], activities: []}
 	]);
-	console.log(channelService.getChannels());
 
 }]);
 
@@ -192,7 +191,7 @@ app.controller("ChannelsCtrl", ["$scope", "user", "channelService",  function($s
 	$scope.channels = channelService.getChannels();
 
 	// Handles favoriting/unvfavoriting a channel
-	// Can only have 10 favorites at a time
+	// Can only have 12 favorites at a time
 	$scope.favorite = function(channel) {
 		channelService.favorite(channel);
 	};

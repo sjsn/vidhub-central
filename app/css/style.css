@@ -70,3 +70,35 @@ main {
 .delete {
 	color: red;
 }
+
+.fav-holder {
+	text-align: center;
+}
+
+.fav-card {
+	height: 300px;
+	width: 300px;
+	margin: 20px;
+	background-color: lightgrey;
+	border: 1px solid darkgrey;
+}
+
+.fav-tag-link {
+	color: white;
+}
+
+.fav-button {
+	position: absolute;
+	right: 10px;
+	top: 0px;
+	font-size: 2rem;
+}
+
+.activity-table {
+	overflow-y: scroll;
+	text-align: left;
+}
+
+.no-act-msg {
+	margin-top: 50px;
+}
