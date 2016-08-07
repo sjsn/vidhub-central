@@ -1,0 +1,72 @@
+@import 'https://fonts.googleapis.com/css?family=Source+Sans+Pro';
+
+body {
+	padding-bottom: 70px;
+	font-family: "Source Sans Pro", Helvetica, sans-serif;
+}
+
+.custom-navbar {
+	background-color: #4472c4;
+}
+
+.custom-navbar .navbar-brand, .custom-navbar .navbar-nav > li > a {
+	color: white;
+}
+
+.custom-navbar .navbar-nav > li > a:hover, .custom-navbar .navbar-nav > li > a:focus {
+	background-color: #4472c4;
+	color: white;
+	text-decoration: underline;
+}
+
+.custom-navbar .navbar-nav>li>a {
+	display: inline-block;
+	float: right;
+}
+
+main {
+	margin-top: 70px;
+}
+
+.tag-link:hover {
+	cursor: pointer;
+	color: grey;
+}
+
+.tag-link {
+	color: darkgrey;
+}
+
+.fav {
+	color: red;
+}
+
+.fav:hover, .edit:hover, .delete:hover {
+	cursor: pointer;
+}
+
+.no-content {
+	font-size: 2rem;
+}
+
+.search {
+	margin-bottom: 30px;
+}
+
+.popover {
+	z-index: 10;
+}
+
+.tag-list {
+	margin-top: 0px;
+	margin-bottom: 10px;
+}
+
+.tag-list-item {
+	margin-top: 0px;
+	margin-bottom: 0px;
+}
+
+.delete {
+	color: red;
+}
