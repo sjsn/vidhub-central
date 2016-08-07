@@ -3,4 +3,22 @@
 		<h2><i class="fa fa-rss" aria-hidden="true"></i> Live Feed</h2>
 	</section>
 	<hr />
+	<section role="region">
+		<table class="table table-striped">
+			<thead>
+				<tr>
+					<th>Channel</th>
+					<th>Activity</th>
+					<th>Date</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr ng-repeat="activity in activities | orderBy: '-date'">
+					<td>{{activity.channel.name}}</td>
+					<td>{{activity.name}}</td>
+					<td>{{activity.date}}</td>
+				</tr>
+			</tbody>
+		</table>
+	</section>
 </main>

@@ -1,5 +1,22 @@
 @import 'https://fonts.googleapis.com/css?family=Source+Sans+Pro';
 
+/*Styles for small screens*/
+@media (max-width: 768px) {
+
+}
+
+/*Styles for medium screens*/
+@media (min-width: 768px) {
+	.collapser {
+		display: none;
+	}
+}
+
+/*Styles for large screens*/
+@media (min-width: 1200px) {
+
+}
+
 body {
 	padding-bottom: 70px;
 	font-family: "Source Sans Pro", Helvetica, sans-serif;
@@ -41,7 +58,7 @@ main {
 	color: red;
 }
 
-.fav:hover, .edit:hover, .delete:hover {
+.fav:hover, .edit:hover, .delete:hover, .fav-tag-link:hover, .clickable-row {
 	cursor: pointer;
 }
 
@@ -101,4 +118,23 @@ main {
 
 .no-act-msg {
 	margin-top: 50px;
+}
+
+.cat-heading {
+	font-size: 2rem;
+}
+
+.panel-body {
+	padding-top: 5px;
+}
+
+.btn-navbar {
+	z-index: 1000;
+	background-color: white;
+	margin-top: 8px;
+	margin-bottom: 8px;
+}
+
+.nav-collapse {
+	text-align: left;
 }

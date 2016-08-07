@@ -39,7 +39,6 @@ app.config(["$stateProvider", "$urlRouterProvider",
 			}
 		);
 
-
 		$urlRouterProvider.otherwise("/");
 
 }]);
@@ -110,6 +109,31 @@ app.factory("channelService", [function() {
 			var index = getChannelIndex(channel);
 			var tagIndex = _.findLastIndex(data[index].tags, tag);
 			data[index].tags.splice(tagIndex, 1);
+		},
+		getCategories: function() {
+			var categories = [];
+			_.each(data, function(channel) {
+				_.each(channel.tags, function(tag) {
+					var index = _.findIndex(categories, function(category) {
+						return category.name == "" + tag;
+					});
+					if (index == -1) {
+						categories.push({name: tag, channels: [channel]})
+					} else {
+						categories[index].channels.push(channel);
+					}
+				});
+			});
+			return categories;
+		},
+		getAllActivities: function() {
+			var activities = [];
+			_.each(data, function(channel) {
+				_.each(channel.activities, function(activity) {
+					activities.push({name: activity.name, date: activity.date, channel: channel});
+				})
+			});
+			return activities;
 		}
 	};
 
@@ -147,7 +171,10 @@ app.controller("MainCtrl", ["$scope", "channelService", function($scope, channel
 }]);
 
 // Controller for the home page
-app.controller("HomeCtrl", ["$scope", function($scope) {
+app.controller("HomeCtrl", ["$scope", "channelService", function($scope, channelService) {
+
+	$scope.activities = channelService.getAllActivities();
+	console.log(channelService.getAllActivities());
 
 }]);
 
@@ -185,7 +212,7 @@ app.controller("FavCtrl", ["$scope", "user", "channelService", function($scope, 
 }]);
 
 // Controller for the channel list page
-app.controller("ChannelsCtrl", ["$scope", "user", "channelService",  function($scope, user, channelService) {
+app.controller("ChannelsCtrl", ["$scope", "user", "channelService", "$uibModal",  function($scope, user, channelService, $uibModal) {
 
 	// Gets array of all channels
 	$scope.channels = channelService.getChannels();
@@ -206,10 +233,36 @@ app.controller("ChannelsCtrl", ["$scope", "user", "channelService",  function($s
 		channelService.deleteTag(channel, tag);
 	};
 
+	$scope.openModal = function(channel) {
+		var modalInstance = $uibModal.open({
+			animation: true,
+			templateUrl: "partials/channelListModal.html",
+			controller: "ModalCtrl",
+			size: "lg",
+			resolve: {
+				channel: function() {
+					return channel;
+				}
+			}
+		});
+	};
+
+}]);
+
+app.controller("ModalCtrl", ["$scope", "$uibModalInstance", "channel", function($scope, $uibModalInstance, channel) {
+
+	$scope.channel = channel;
+	$scope.close = function() {
+		$uibModalInstance.dismiss('cancel')
+	};
+
 }]);
 
 // Controller for the categories page
-app.controller("CategoriesCtrl", ["$scope", "user", function($scope, user) {
+app.controller("CategoriesCtrl", ["$scope", "user", "channelService", function($scope, user, channelService) {
+
+	$scope.categories = channelService.getCategories();
+
 
 }]);
 

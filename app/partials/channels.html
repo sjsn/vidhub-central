@@ -24,7 +24,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr ng-repeat="channel in channels | orderBy: '-subscribers' | filter: searchTerm">
+						<tr ng-repeat="channel in channels | orderBy: '-subscribers' | filter: searchTerm" ng-click="openModal(channel)" class="clickable-row">
 							<td>{{channel.name}}</td>
 							<td>{{channel.subscribers}}</td>
 							<td>{{channel.service}}</td>
@@ -33,7 +33,7 @@
 									<span ng-click="getTags(tag)" class="tag-link">{{tag}}</span>
 									<span ng-if="$index < channel.tags.length - 1" class="tag-link">, </span>
 								</span> 
-								<span uib-popover uib-popover-template="'addTag.html'" popover-trigger="outsideclick" popover-title="Add a Tag" ng-if="channel.tags.length < 10" aria-label="Edit Tags" class="edit"> <span class="tag-link" ng-if="channel.tags.length == 0">(add a tag) </span><i class="fa fa-pencil" aria-hidden="true"></i></span>
+								<span uib-popover uib-popover-template="'addTag.html'" popover-trigger="outsideclick" popover-title="Edit Tags" ng-if="channel.tags.length < 10" aria-label="Edit Tags" class="edit"> <span class="tag-link" ng-if="channel.tags.length == 0">(add a tag) </span><i class="fa fa-pencil" aria-hidden="true"></i></span>
 							</td>
 							<td>
 								<span class="fav" ng-click="favorite(channel)"><i class="fa fa-heart-o heart" aria-hidden="true" ng-hide="channel.favorite"></i><i class="fa fa-heart heart" aria-hidden="true" ng-show="channel.favorite"></i></span>
