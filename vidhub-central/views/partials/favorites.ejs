@@ -1,0 +1,58 @@
+<main class="container" ng-show="isSignedIn">
+	<section role="region">
+		<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+			<h2><i class="fa fa-heart fav" aria-hidden="true"></i> Your Favorites</h2>
+			<hr />
+			<section role="region" class="fav-holder">
+				<div class="col-xs-12 col-sm-6 col-md-4 col-lg-4 fav-card" ng-repeat="channel in channels | orderBy: '-subscribers'" ng-show="areFavorites()" ng-if="channel.favorite">
+					<span class="fav-button" ng-click="favorite(channel)"aria-label="Delete Favorite"><i class="fa fa-times fav" aria-hidden="true"></i></span>
+					<h3>{{channel.name}}</h3>
+					<p>{{channel.subscribers}}</p>
+					<p>
+						<span ng-repeat="tag in channel.tags | orderBy: '-tag'">
+							<span ng-click="getTags(tag)" class="fav-tag-link">{{tag}}</span>
+							<span ng-if="$index < channel.tags.length - 1" class="fav-tag-link">, </span>
+						</span>
+						<span uib-popover uib-popover-template="'addTag.html'" popover-trigger="outsideclick" popover-title="Edit Tags" ng-if="channel.tags.length < 10" aria-label="Edit Tags" class="edit"> <span class="fav-tag-link" ng-if="channel.tags.length == 0">(add a tag) </span><i class="fa fa-pencil" aria-hidden="true"></i></span>
+					</p>
+					<div class="activity-table" ng-show="channel.activities.length">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>Activity:</th>
+									<th>Date: </th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr ng-repeat="activity in channel.activities | orderBy: '-date'">
+									<td>{{activity.name}}</td>
+									<td>{{activity.date}}</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					<div ng-hide="channel.activities.length" class="no-act-msg">
+						<p>No recent activity</p>
+					</div>
+				</div>				
+				<div ng-hide="areFavorites()">
+					<p class="no-content">You currently have no favorites. <a ui-sref="channels">Click here to add some.</a></p>
+				</div>
+			</section>
+		</div>
+	</section>
+</main>
+
+<script type="text/ng-template" id="addTag.html">
+	<div class="popover-content">
+		<div class="tag-list">
+			<p ng-repeat="tag in channel.tags" class="tag-list-item">{{tag}} - <span aria-label="delete" ng-click="deleteTag(channel, tag)"><i class="fa fa-trash-o delete" aria-hidden="true"></i></span></p>
+		</div>
+		<form class="input-group" ng-submit="addTag(channel, newTag)">
+			<input class="form-control" type="text" ng-model="newTag" placeholder="e.g. gaming" />
+			<span class="input-group-btn">
+				<button class="btn btn-default" type="submit" aria-label="add">Add</button>
+			</span>
+		</form>
+	</div>
+</script>

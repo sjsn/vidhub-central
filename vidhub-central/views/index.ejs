@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="icon" type="image/png" href="img/play.png">
+	<title>VidHubCentral</title>
+	<!-- Angular -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.js"></script>
+    <!-- Angular Bootstrap -->
+	<script src="https://angular-ui.github.io/bootstrap/ui-bootstrap-tpls-2.0.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.5/angular-animate.min.js"></script>
+    <!-- UI Router -->
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/angular-ui-router/0.2.10/angular-ui-router.min.js"></script>
+    <!-- Lodash -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/lodash/4.14.1/lodash.min.js"></script>
+    <!-- Custom JS -->
+    <script type="text/javascript" src="/javascripts/angularApp.js"></script>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <!-- Font Awesome -->
+    <script src="https://use.fontawesome.com/6d01efcfaa.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" type="text/css" href="/stylesheets/style.css">
+</head>
+<body class="container" ng-app="VidHub" ng-controller="MainCtrl">
+	<header>
+		<nav class="navbar navbar-fixed-top custom-navbar" role="navigation">
+			<div class="container-fluid">
+				<a class="navbar-brand" ui-sref="feed">VidHub Central</a>
+				<div uib-collapse="navCollapsed" class="nav-collapse collapse navbar-collapse">
+					<ul class="nav navbar-nav">
+						<li><a ui-sref="favorites"><i class="fa fa-heart-o hidden-xs hidden-sm" aria-hidden="true"></i> My Favorites</a></li>
+						<li><a ui-sref="categories"><i class="fa fa-folder-open-o hidden-xs hidden-sm" aria-hidden="true"></i> My Categories</a></li>
+						<li><a ui-sref="channels"><i class="fa fa-list-ul hidden-xs hidden-sm" aria-hidden="true"></i> All Channels</a></li>
+					</ul>
+					<ul class="nav navbar-nav navbar-right" ng-hide="isSignedIn">
+						<li><button class="btn btn-default navbar-btn">Sign In</button></li>
+					</ul>
+					<ul class="nav navbar-nav navbar-right" ng-show="isSignedIn">
+						<li><a ui-sref="account"><i class="fa fa-user hidden-xs hidden-sm" aria-hidden="true"></i> My Account</a></li>
+					</ul>
+				</div>
+				<button ng-init="navCollapsed = true" ng-click="navCollapsed = !navCollapsed" class="btn btn-navbar pull-right collapser">
+					<span class="sr-only">Toggle navigation</span>
+					<i class="fa fa-bars" aria-hidden="true"></i>
+				</button>
+			</div>
+		</nav>
+	</header>
+
+	<main class="container" ng-hide="isSignedIn">
+		<section role="region">
+			<h1>Please sign in to interact with the real webpage!</h1>
+		</section>
+	</main>
+
+	<div ui-view></div>
+
+</body>
+</html>
