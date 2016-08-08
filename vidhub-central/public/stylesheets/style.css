@@ -138,3 +138,22 @@ main {
 .nav-collapse {
 	text-align: left;
 }
+
+.yt-btn {
+	color: white;
+	background-color: #e52d27;
+}
+
+.tw-btn {
+	color: white;
+	background-color: #6441a5;
+}
+
+.yt-btn:hover, .tw-btn:hover, .yt-btn:focus, .tw-btn:focus {
+	color: white;
+}
+
+.acct-title {
+	font-weight: bold;
+	text-decoration: underline;
+}

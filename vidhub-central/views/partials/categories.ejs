@@ -18,7 +18,12 @@
 					<uib-accordion-heading>
 						{{channel.name}}
 					</uib-accordion-heading>
-					<p>Favorite: <span class="fav" ng-click="favorite(channel)"><i class="fa fa-heart-o heart" aria-hidden="true" ng-hide="channel.favorite"></i><i class="fa fa-heart heart" aria-hidden="true" ng-show="channel.favorite"></i></span></p>
+					<p>Favorite: 
+						<span class="fav" ng-click="favorite(channel)">
+							<i class="fa fa-heart-o heart" aria-hidden="true" ng-hide="channel.favorite"></i>
+							<i class="fa fa-heart heart" aria-hidden="true" ng-show="channel.favorite"></i>
+						</span>
+					</p>
 					<table class="table">
 						<thead ng-if="channel.activities.length > 0">
 							<tr>

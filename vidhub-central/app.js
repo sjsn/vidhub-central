@@ -35,7 +35,6 @@ app.set('view engine', 'ejs');
 // Sets a custom static path for partials
 app.use('/partials', express.static(__dirname + '/views/partials'));
 
-
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));

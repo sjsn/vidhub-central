@@ -30,7 +30,7 @@
 							<td ng-click="openModal(channel)" class="clickable-row">{{channel.service}}</td>
 							<td>
 								<span ng-repeat="tag in channel.tags| orderBy: '-tag'">
-									<span ng-click="getTags(tag)" class="tag-link">{{tag}}</span>
+									<span ui-sref="categories" ng-click="tagClick(tag)" class="tag-link">{{tag}}</span>
 									<span ng-if="$index < channel.tags.length - 1" class="tag-link">, </span>
 								</span> 
 								<span uib-popover uib-popover-template="'addTag.html'" popover-trigger="outsideclick" popover-title="Edit Tags" ng-if="channel.tags.length < 10" aria-label="Edit Tags" class="edit"> <span class="tag-link" ng-if="channel.tags.length == 0">(add a tag) </span><i class="fa fa-pencil" aria-hidden="true"></i></span>

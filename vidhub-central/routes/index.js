@@ -14,4 +14,6 @@ router.get('/', function(req, res, next) {
 	res.render('index', { title: 'Express' });
 });
 
+// Stopped at Mean Authentication -> Configuring API End Points
+
 module.exports = router;

@@ -168,6 +168,11 @@ app.controller("MainCtrl", ["$scope", "channelService", function($scope, channel
 		{name: "Personify", subscribers: 13, service: "YouTube", favorite: true, tags: [], activities: []}
 	]);
 
+	// Easy tag-click navigation
+	$scope.tagClick = function(tag) {
+		$scope.clickedTag = tag;
+	};
+
 }]);
 
 // Controller for the home page
@@ -215,6 +220,8 @@ app.controller("ChannelsCtrl", ["$scope", "user", "channelService", "$uibModal",
 
 	// Gets array of all channels
 	$scope.channels = channelService.getChannels();
+
+
 
 	// Handles favoriting/unvfavoriting a channel
 	// Can only have 12 favorites at a time
@@ -267,6 +274,13 @@ app.controller("CategoriesCtrl", ["$scope", "user", "channelService", function($
 	$scope.favorite = function(channel) {
 		channelService.favorite(channel);
 	};
+
+	// Opens page with a search item to handle tag click navigation
+	if ($scope.clickedTag != undefined) {
+		var tag = $scope.clickedTag;
+		tag = tag.slice(1);
+		$scope.searchTerm = tag;
+	}
 
 }]);
 
