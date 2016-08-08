@@ -174,7 +174,6 @@ app.controller("MainCtrl", ["$scope", "channelService", function($scope, channel
 app.controller("HomeCtrl", ["$scope", "channelService", function($scope, channelService) {
 
 	$scope.activities = channelService.getAllActivities();
-	console.log(channelService.getAllActivities());
 
 }]);
 
@@ -236,7 +235,7 @@ app.controller("ChannelsCtrl", ["$scope", "user", "channelService", "$uibModal",
 	$scope.openModal = function(channel) {
 		var modalInstance = $uibModal.open({
 			animation: true,
-			templateUrl: "partials/channelListModal.html",
+			templateUrl: "./partials/channelListModal.ejs",
 			controller: "ModalCtrl",
 			size: "lg",
 			resolve: {
@@ -263,6 +262,11 @@ app.controller("CategoriesCtrl", ["$scope", "user", "channelService", function($
 
 	$scope.categories = channelService.getCategories();
 
+	// Handles favoriting/unvfavoriting a channel
+	// Can only have 12 favorites at a time
+	$scope.favorite = function(channel) {
+		channelService.favorite(channel);
+	};
 
 }]);
 
