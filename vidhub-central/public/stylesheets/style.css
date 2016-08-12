@@ -2,7 +2,9 @@
 
 /*Styles for small screens*/
 @media (max-width: 768px) {
-
+	.login-form {
+		width: 80%;
+	}	
 }
 
 /*Styles for medium screens*/
@@ -10,11 +12,26 @@
 	.collapser {
 		display: none;
 	}
+
+	.login-form {
+		width: 50%;
+	}
 }
 
 /*Styles for large screens*/
 @media (min-width: 1200px) {
+	.login-form {
+		width: 50%;
+	}
+}
 
+.login-form, .login-title {
+	margin: auto;
+}
+
+.login-title {
+	width: 80%;
+	text-align: center;
 }
 
 body {
@@ -156,4 +173,19 @@ main {
 .acct-title {
 	font-weight: bold;
 	text-decoration: underline;
+}
+
+.login-form {
+	margin-top: 60px;
+	background-color: #F2F2F2;
+	border-radius: 10px;
+	padding: 20px;
+}
+
+.login-hr {
+	border-color: #4472c4;
+}
+
+.inv-error {
+	color: red;
 }

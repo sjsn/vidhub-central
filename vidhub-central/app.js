@@ -6,9 +6,12 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 // For user authentication
 var passport = require("passport");
+var session = require("express-session");
+var secret = require("./api_config/secret");
 
 var app = express();
-
+var flash = require("connect-flash");
+app.use(flash());
 // Mongoose setup
 var mongoose = require("mongoose");
 // Import models
@@ -22,11 +25,21 @@ mongoose.connect("mongodb://localhost/vidhubcentral");
 
 // Import authentication (passport) packages
 require("./api_config/passport.js");
+app.use(session({
+  secret: secret.SECRET,
+  name: "vidhubcen_sess",
+  proxy: true,
+  resave: true,
+  saveUninitialized: true
+}));
 // Sets passport functions as middleware
 app.use(passport.initialize());
+app.use(passport.session());
 
-// API directory
+// Routes for client-side content
 var routes = require("./routes/index");
+// Routes for API
+var apiRoutes = require("./routes/api");
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -43,8 +56,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// API endpoint
+// Main app endpoint (front-end of app)
 app.use('/', routes);
+// API endpoints
+app.use("/", apiRoutes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -77,5 +92,13 @@ app.use(function(err, req, res, next) {
   });
 });
 
+app.use(function(err, req, res, next) {
+  if (err.name === "UnauthorizedError") {
+    res.status(401);
+    res.json({
+      message: err.name + ": " + err.message
+    });
+  }
+});
 
 module.exports = app;

@@ -8,12 +8,20 @@ app.config(["$stateProvider", "$urlRouterProvider",
 	function($stateProvider, $urlRouterProvider) {
 
 		$stateProvider.state(
-			"feed", {
+			"home", {
 				url: "/",
-				templateUrl: "./partials/feed.ejs",
-				controller: "HomeCtrl"
+				templateUrl: "./partials/forms.ejs",
+				controller: "FormCtrl"
 			}
-		).state(
+		)
+		.state(
+			"feed", {
+				url: "/feed",
+				templateUrl: "./partials/feed.ejs",
+				controller: "FeedCtrl"
+			}
+		)
+		.state(
 			"favorites", {
 				url: "/favorites",
 				templateUrl: "./partials/favorites.ejs",
@@ -43,22 +51,31 @@ app.config(["$stateProvider", "$urlRouterProvider",
 
 }]);
 
-// Handles manipulation of all of the user info
-app.factory("user", ["$http", function($http){
-	var data = [];
+// Handles authentication and manipulation of all of the user info
+app.factory("userAuth", ["$http", "$window", function($http, $window){
+
+	var data = {};
 
 	return {
-		signIn: function(userInfo) {
-
+		isLoggedIn: function() {
+			return false;
 		},
-		getYoutube: function() {
-
+		login: function(username, password) {
+			return $http({
+				url: "/api/login/",
+				method: "POST",
+				params: {username: username, password: password}
+			});
 		},
-		getTwitch: function() {
-
+		register: function(name, username, password) {
+			return $http({
+				url: "/api/users",
+				method: "POST",
+				params: {name: name, username: username, password: password}
+			});
 		},
-		getChannels: function() {
-
+		setUser: function(user) {
+			data = user;
 		}
 	};
 }]);
@@ -134,16 +151,16 @@ app.factory("channelService", [function() {
 				})
 			});
 			return activities;
-		}
+		},
 	};
 
 }]);
 
-// Controller for the top-level index page
-// Global scope to know when a user is signed in
-app.controller("MainCtrl", ["$scope", "channelService", function($scope, channelService) {
-
-	$scope.isSignedIn = true;
+app.controller("MainCtrl", ["$scope", "channelService", "userAuth", "$http",
+	function($scope, channelService, userAuth, $http) {
+	$scope.isSignedIn = function() {
+			return userAuth.isLoggedIn();
+	};
 
 	// Temp variable holding fake channel data
 	channelService.setChannels([
@@ -175,15 +192,59 @@ app.controller("MainCtrl", ["$scope", "channelService", function($scope, channel
 
 }]);
 
-// Controller for the home page
-app.controller("HomeCtrl", ["$scope", "channelService", function($scope, channelService) {
+// Controller for the top-level index page
+// Global scope to know when a user is signed in
+app.controller("FormCtrl", ["$scope", "channelService", "userAuth", "$http",
+	function($scope, channelService, userAuth, $http) {
 
-	$scope.activities = channelService.getAllActivities();
+	$scope.toggleLogin = true;
+
+	$scope.login = function() {
+		console.log("login?");
+		$scope.invalidCred = false;
+		$scope.noAccount = false;
+		if (username && password) {
+			userAuth.login($scope.username, $scope.pass).then(function(res) {
+				console.log(res.user);
+				if (res.user) {
+					userAuth.setUser(res.user);
+					$scope.isSignedIn = true;
+				} else {
+					$scope.noAccount = true;
+				}
+			});
+		} else {
+			$scope.invalidCred = true;
+		}
+	};
+
+	$scope.register = function() {
+		$scope.taken = false;
+		$scope.invalidCred = true;
+		if ($scope.name && $scope.username && $scope.pass && ($scope.pass == $scope.confpass)) {
+			userAuth.register($scope.name, $scope.username, $scope.pass).then(function(res) {
+				console.log(res.user);
+				if (res.user) {
+					userAuth.serUser(res.user);
+					$scope.isSignedIn = true;
+				} else {
+					$scope.taken = true;
+				}
+			});
+		} else {
+			$scope.invalidCred = true;
+		}
+	};
 
 }]);
 
+// Controller for the home feed
+app.controller("FeedCtrl", ["$scope", "channelService", function($scope, channelService) {
+	$scope.activities = channelService.getAllActivities();
+}]);
+
 // Controller for the favorites page
-app.controller("FavCtrl", ["$scope", "user", "channelService", function($scope, user, channelService) {
+app.controller("FavCtrl", ["$scope", "userAuth", "channelService", function($scope, userAuth, channelService) {
 
 	$scope.channels = channelService.getChannels();
 
@@ -216,12 +277,10 @@ app.controller("FavCtrl", ["$scope", "user", "channelService", function($scope, 
 }]);
 
 // Controller for the channel list page
-app.controller("ChannelsCtrl", ["$scope", "user", "channelService", "$uibModal",  function($scope, user, channelService, $uibModal) {
+app.controller("ChannelsCtrl", ["$scope", "userAuth", "channelService", "$uibModal",  function($scope, userAuth, channelService, $uibModal) {
 
 	// Gets array of all channels
 	$scope.channels = channelService.getChannels();
-
-
 
 	// Handles favoriting/unvfavoriting a channel
 	// Can only have 12 favorites at a time
@@ -265,7 +324,7 @@ app.controller("ModalCtrl", ["$scope", "$uibModalInstance", "channel", function(
 }]);
 
 // Controller for the categories page
-app.controller("CategoriesCtrl", ["$scope", "user", "channelService", function($scope, user, channelService) {
+app.controller("CategoriesCtrl", ["$scope", "userAuth", "channelService", function($scope, userAuth, channelService) {
 
 	$scope.categories = channelService.getCategories();
 
@@ -285,6 +344,6 @@ app.controller("CategoriesCtrl", ["$scope", "user", "channelService", function($
 }]);
 
 // Controller for the account page
-app.controller("AccountCtrl", ["$scope", "user", function($scope, user) {
-
+app.controller("AccountCtrl", ["$scope", "userAuth", function($scope, userAuth) {
+	
 }]);

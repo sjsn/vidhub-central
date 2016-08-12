@@ -1,0 +1,51 @@
+<main class="container" ng-hide="isSignedIn()">
+		<section role="region">
+			<h1 class="login-title">Welcome to VidHub Central.</h1>
+			<h2 class="login-title">Please log in or create an account below.</h2>
+		</section>
+		<section role="region">
+			<div class="login-form" ng-show="toggleLogin">
+				<h2>Login</h2>
+				<hr class="login-hr" />
+				<p class="inv-error" ng-if="noAccount">Invalid account information. Please try again.</p>
+				<p class="inv-error" ng-if="invalidCred">Form must not be blank. Please try again.</p>
+				<div class="form-group">
+					<form ng-submit="login()" name="loginForm">
+						<label for="username">Username:</label>
+						<input class="form-control" type="text" maxlength="12" minlength="3" id="username" ng-model="username" />
+						<label for="password">Password:</label>
+						<input class="form-control" type="password" maxlength="20" minlength="6" id="password" ng-model="pass" />
+						<br />
+						<button type="submit" class="btn btn-primary">Login</button> 
+						Or 
+						<a ng-click="toggleLogin = !toggleLogin" class="btn btn-warning reg-btn">Create an Account</a>
+					</form>
+				</div>
+			</div>
+			<div class="login-form" ng-hide="toggleLogin">
+				<h2>Create an Account</h2>
+				<hr class="login-hr" />
+				<p class="inv-error" ng-if="taken">That username is already taken. Please try again.</p>
+				<p class="inv-error" ng-if="invalidCred">Form must not be blank. Please try again.</p>
+				<div class="form-group">
+					<form ng-submit="register()" name="registerForm">
+						<label for="name">Full Name:</label>
+						<input type="text" name="name" id="name" class="form-control" maxlength="50" ng-model="name" />
+						<label for="username">Username:</label>
+						<input class="form-control" type="text" maxlength="12" minlength="3" id="username" ng-model="username" required />
+						<p ng-show="registerForm.username.$invalid && registerForm.username.$touched" class="inv-error">Invalid username. Must be at least 3 letters and unique.</p>
+						<label for="password">Password:</label>
+						<input class="form-control" type="password" maxlength="20" minlength="6" id="password" ng-model="pass" required />
+						<p ng-show="registerForm.password.$invalid && registerForm.password.$touched" class="inv-error">Invalid password. Must be at least 6 characters.</p>
+						<label for="confPassword">Confirm Password:</label>
+						<input class="form-control" type="password" maxlength="20" minlength="6" id="confPassword" ng-model="confpass" required />
+						<p ng-show="pass != confpass && registerForm.confPass.$touched" class="inv-error">Passwords do not match</p>
+						<br />
+						<button type="submit" class="btn btn-warning" ng-disabled="registerForm.$invalid">Create Account</button>
+						 Or 
+						<a ng-click="toggleLogin = !toggleLogin" class="btn btn-primary">Login</a>
+					</form>
+				</div>
+			</div>
+		</section>
+	</main>
