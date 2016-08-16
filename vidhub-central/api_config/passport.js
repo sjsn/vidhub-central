@@ -43,8 +43,7 @@ passport.use("youtube", new YouTubeStrategy({
 		callbackURL: "http://localhost:8080/api/auth/youtube"
 	},
 	function(accessToken, refreshToken, profile, done) {
-
-		console.log(profile);
+		console.log("access tokem from passport: " + accessToken);
 		// Compares the twitch profile name with the users registered profile name
 		var search = {
 			firstName: profile.givenName,
@@ -61,9 +60,10 @@ passport.use("youtube", new YouTubeStrategy({
 					message: "User not found"
 				})
 			}
-			if (!user.youtubeAccessToken) {
+			if (!user.youtubeAccessToken || !user.youtubeUsername) {
 				user.youtubeUsername = profile.displayName;
 				user.youtubeAccessToken = accessToken;
+				console.log("Saving user in psprt: " + user);
 				user.save(function(err, user) {
 					if (err) {
 						return done(err, null);
@@ -84,7 +84,6 @@ passport.use("twitch", new TwitchStrategy({
 		callbackURL: "http://localhost:8080//api/auth/twitch"
 	},
 	function(accessToken, refreshToken, profile, done) {
-		console.log(profile);
 		// Compares the twitch profile name with the users registered profile name
 		var search = {
 			firstName: profile.givenName,

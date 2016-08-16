@@ -94,11 +94,11 @@ app.factory("userAuth", ["$http", "$window", function($http, $window){
 				data = {};
 			});
 		},
-		register: function(name, username, password) {
+		register: function(fName, lName, username, password) {
 			return $http({
 				url: "/api/users",
 				method: "POST",
-				params: {name: name, username: username, password: password}
+				params: {fName: fName, lName: lName, username: username, password: password}
 			});
 		},
 		setUser: function(user) {
@@ -106,6 +106,9 @@ app.factory("userAuth", ["$http", "$window", function($http, $window){
 		},
 		getUser: function(user) {
 			return data;
+		},
+		getYoutube: function() {
+
 		}
 	};
 }]);
@@ -255,11 +258,11 @@ app.controller("FormCtrl", ["$scope", "channelService", "userAuth", "$http", "lo
 	$scope.register = function() {
 		$scope.taken = false;
 		$scope.invalidCred = true;
-		if ($scope.name && $scope.username && $scope.pass && ($scope.pass == $scope.confpass)) {
-			userAuth.register($scope.name, $scope.username, $scope.pass).then(function(res) {
+		if ($scope.fName && $scope.lName && $scope.username && $scope.pass && ($scope.pass == $scope.confpass)) {
+			userAuth.register($scope.fName, $scope.lName, $scope.username, $scope.pass).then(function(res) {
 				console.log(res.user);
 				if (res.user) {
-					userAuth.serUser(res.user);
+					userAuth.setUser(res.user);
 					$scope.isSignedIn = true;
 				} else {
 					$scope.taken = true;
@@ -384,10 +387,10 @@ app.controller("AccountCtrl", ["$scope", "userAuth", function($scope, userAuth) 
 	
 	$scope.user = userAuth.getUser();
 
-	
-
 	$scope.logout = function() {
 		userAuth.logout();
 	};
+
+
 
 }]);

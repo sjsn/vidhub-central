@@ -29,16 +29,20 @@
 				<p class="inv-error" ng-if="invalidCred">Oops. There appears to be something wrong with the form. Ensure all fields are filled in and the passwords match, then try again.</p>
 				<div class="form-group">
 					<form ng-submit="register()" name="registerForm">
-						<label for="name">Full Name:</label>
-						<input type="text" name="name" id="name" class="form-control" maxlength="50" ng-model="name" />
+						<label for="fName">First Name:</label>
+						<input type="text" name="fName" id="fName" class="form-control" maxlength="50" ng-model="fName" required/>
+						<p ng-show="registerForm.fName.$invalid && registerForm.fName.$touched" class="inv-error">First name is required.</p>
+						<label for="lName">Last Name:</label>
+						<input type="text" name="lName" id="lName" class="form-control" maxlength="50" ng-model="lName" required />
+						<p ng-show="registerForm.lName.$invalid && registerForm.lName.$touched" class="inv-error">Last name is required.</p>
 						<label for="username">Username:</label>
-						<input class="form-control" type="text" maxlength="12" minlength="3" id="username" ng-model="username" required />
+						<input class="form-control" type="text" maxlength="12" minlength="3" id="username" name="username" ng-model="username" required />
 						<p ng-show="registerForm.username.$invalid && registerForm.username.$touched" class="inv-error">Invalid username. Must be at least 3 letters and unique.</p>
 						<label for="password">Password:</label>
-						<input class="form-control" type="password" maxlength="20" minlength="6" id="password" ng-model="pass" required />
+						<input class="form-control" type="password" maxlength="20" minlength="6" name="password" id="password" ng-model="pass" required />
 						<p ng-show="registerForm.password.$invalid && registerForm.password.$touched" class="inv-error">Invalid password. Must be at least 6 characters.</p>
 						<label for="confPassword">Confirm Password:</label>
-						<input class="form-control" type="password" maxlength="20" minlength="6" id="confPassword" ng-model="confpass" required />
+						<input class="form-control" type="password" maxlength="20" minlength="6" name="confPass" id="confPassword" ng-model="confpass" required />
 						<p ng-show="pass != confpass && registerForm.confPass.$touched" class="inv-error">Passwords do not match</p>
 						<br />
 						<button type="submit" class="btn btn-warning" ng-disabled="registerForm.$invalid">Create Account</button>

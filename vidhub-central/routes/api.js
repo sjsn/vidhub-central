@@ -74,11 +74,8 @@ router.post("/api/users/", function(req, res) {
 			console.log("Registering user: " + req.query.username);
 			var user = new User();
 			user.username = req.query.username;
-			if (req.query.name) {
-				user.name = req.query.name;
-			} else {
-				user.name = "";
-			}
+			user.firstName = req.query.fName;
+			user.lastName = req.query.lName;
 			// Encrypts the password for safety
 			user.setPassword(req.query.password);
 			user.save(function(err) {
@@ -108,49 +105,48 @@ function getYTSubs(profile) {
 	var channels = [];
 	// An array of the users subscriptions as subscription opbjects
 	var channelItems = profile.subscriptions.list({
-		part: "snippet"
-	}).items;
+		part: "snippet",
+		mine: true
+	});
+	console.log(channelItems);
+	channelItems = channelItems.list;
 	for(var i = 0; i < channelItems.length; i++) {
 		var curChannel = channelItems[i].snippet;
 		var channel = new Channel();
-		channel.name = curChannel.channelTitle;
+		channel.name = curChannel.title;
 		channel.channelID = curChannel.channelId;
 		channel.type = "Youtube";
 		// May ommit subscriber count if it's too difficult to get
 		// channel.subscribers = curChannel;
+		// Adds the activities of the channel to the users activities feed
+		getYTActs(profile, channel);
 		channels.push(channel);
 	}
-	// Add the activities of the users subscriptions to the relevent channels
-	channels = getYTActs(profile, channels);
 	return channels;
 };
 
 // Helper function to get the list of all the activty the users' subscritions are doing
-function getYTActs(profile, channels) {
+function getYTActs(profile, channel) {
 	// Gets the last 100 activities
 	var actItems = profile.activities.list({
 		part: "snippet",
-		maxResults: ""
+		channelID: channel.channelID
+
 	}).items;
 	for (var i = 0; i < actItems.length; i++) {
 		var curActivity = actItems[i].snippet;
 		var activity = new Activity();
 		activity.name = curActivity.description;
 		activity.date = curActivity.publishedAt;
-		// Slow way of doing this. Look into less complexity
-		for (var j = 0; j < channels.length; j++) {
-			if (channels[j].name == curActivity.channelTitle) {
-				activity.channel = channels[j];
-				channels[j].acitivities.push(activity);
-			}
-		}
+		activity.channel = channel;
+		channel.activities.push(activity);
 		activity.save(function(err) {
 			if (err) {
 				console.log(err);
 			}
 		})
 	}
-	return channels;
+	return channel;
 }
 
 // Helper function to save the channels and update the user in the db
@@ -168,7 +164,7 @@ function saveChannels(channels, user) {
 }
 
 // GET the youtube authorization information and relevent channel data
-router.get("/api/auth/youtube", passport.authenticate("youtube"), 
+router.get("/api/auth/youtube", passport.authenticate("youtube"),
 	function(req, res) {
 		if (req.error) {
 			console.log(req.error);
@@ -188,6 +184,7 @@ router.get("/api/auth/youtube", passport.authenticate("youtube"),
 			user = saveChannels(channels, user);
 		}
 		res.user = user;
+		console.log(user);
 		return res.user;
 	}
 );
@@ -256,7 +253,7 @@ function getTWActs(Twitch, twitchAccess, channels) {
 }
 
 // GET the Twitch authorization information and relevent channel data
-router.get("/api/auth/twitch", passport.authenticate("twitch"), 
+router.get("/api/auth/twitch", passport.authenticate("twitch"),
 	function(req, res) {
 		if (req.error) {
 			console.log(req.error);
