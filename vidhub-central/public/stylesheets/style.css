@@ -159,6 +159,7 @@ main {
 .yt-btn {
 	color: white;
 	background-color: #e52d27;
+	margin-right: 20px;
 }
 
 .tw-btn {
@@ -188,4 +189,16 @@ main {
 
 .inv-error {
 	color: red;
+}
+
+.logout-btn, .account-head {
+	display: inline-block;
+}
+
+.logout-btn {
+	margin-left: 30px;
+}
+
+.act-btns {
+	margin-top: 50px;
 }

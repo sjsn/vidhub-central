@@ -12,7 +12,14 @@ var UserSchema = new mongoose.Schema({
 		unique: true,
 		required: true
 	},
-	name: String,
+	firstName: {
+		type: String,
+		required: true
+	},
+	lastName: {
+		type: String,
+		required: true
+	},
 	salt: {
 		type: String,
 		required: true
@@ -24,8 +31,12 @@ var UserSchema = new mongoose.Schema({
 	channels: [{
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "Channel"
-	}]
-	// Still need to store YouTube and Twitch API keys
+	}],
+	// YouTube and Twitch credentials
+	youtubeUsername: String,
+	youtubeAccessToken: String,
+	twitchUsername: String,
+	twitchAccessToken: String
 });
 
 // Saves user password as an encrypted hash + salt for security

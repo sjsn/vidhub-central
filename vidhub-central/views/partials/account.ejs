@@ -1,6 +1,7 @@
 <main class="container" ng-show="isSignedIn()">
 	<section role="region">
-		<h2><i class="fa fa-user" aria-hidden="true"></i> My Account</h2>
+		<h2 class="account-head"><i class="fa fa-user" aria-hidden="true"></i> My Account</h2>
+		<button class="btn btn-danger logout-btn" ng-click="logout()" ui-sref="home">Logout</button>
 	</section>
 	<hr />
 	<section role="region">
@@ -10,7 +11,7 @@
 			<p><span class="acct-title">YouTube Username:</span> <span ng-show="user.ytusername">{{user.ytusername}}</span><span ng-hide="user.ytusername">YouTube Account not linked</span></p>
 			<p><span class="acct-title">Twitch.Tv Username:</span> <span ng-show="user.twusername">{{user.twusername}}</span><span ng-hide="user.twusername">Twitch.Tv Account not linked</span></p>
 		</div>
-		<div> 
+		<div class="act-btns"> 
 			<button class="btn yt-btn"><i class="fa fa-youtube-play" aria-hidden="true"></i>    Link YouTube Account</button>
 			<button class="btn tw-btn"><i class="fa fa-twitch" aria-hidden="true"></i>     Link Twitch.tv Account</button>
 		</div>

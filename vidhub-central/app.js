@@ -7,6 +7,7 @@ var bodyParser = require('body-parser');
 // For user authentication
 var passport = require("passport");
 var session = require("express-session");
+var MongoStore = require("connect-mongo")(session);
 var secret = require("./api_config/secret");
 
 var app = express();
@@ -21,17 +22,21 @@ require("./models/Tags");
 require("./models/Activities");
 mongoose.Promise = global.Promise;
 // Establish a connection with the database
-mongoose.connect("mongodb://localhost/vidhubcentral");
+var db = "mongodb://localhost/vidhubcentral"
+mongoose.connect(db);
 
-// Import authentication (passport) packages
-require("./api_config/passport.js");
+// Session setup
 app.use(session({
   secret: secret.SECRET,
   name: "vidhubcen_sess",
-  proxy: true,
-  resave: true,
-  saveUninitialized: true
+  resave: false,
+  saveUninitialized: true,
+  maxAge: (1000 * 60 * 60 * 24 * 7),
+  store: new MongoStore({url: db})
 }));
+
+// Import authentication (passport) packages
+require("./api_config/passport.js");
 // Sets passport functions as middleware
 app.use(passport.initialize());
 app.use(passport.session());

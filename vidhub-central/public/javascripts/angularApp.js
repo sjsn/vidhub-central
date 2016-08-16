@@ -11,7 +11,14 @@ app.config(["$stateProvider", "$urlRouterProvider",
 			"home", {
 				url: "/",
 				templateUrl: "./partials/forms.ejs",
-				controller: "FormCtrl"
+				controller: "FormCtrl",
+				resolve: {
+					"loginPromise": [
+						"userAuth", function(userAuth) {
+							return userAuth.checkLogin();
+						}
+					]
+				}
 			}
 		)
 		.state(
@@ -57,14 +64,34 @@ app.factory("userAuth", ["$http", "$window", function($http, $window){
 	var data = {};
 
 	return {
+		checkLogin: function() {
+			return $http({
+				url: "/api/login",
+				method: "GET",
+			}).then(function(res) {
+				if (res.data) {
+					data = res.data;
+				}
+			}, function(err) {
+				//console.log(err);
+			});
+		},
 		isLoggedIn: function() {
-			return false;
+			return data.username != undefined;	
 		},
 		login: function(username, password) {
 			return $http({
 				url: "/api/login/",
 				method: "POST",
 				params: {username: username, password: password}
+			});
+		},
+		logout: function() {
+			$http({
+				url: "/api/logout", 
+				method: "GET"})
+			.then(function() {
+				data = {};
 			});
 		},
 		register: function(name, username, password) {
@@ -75,7 +102,10 @@ app.factory("userAuth", ["$http", "$window", function($http, $window){
 			});
 		},
 		setUser: function(user) {
-			data = user;
+			angular.copy(user, data);
+		},
+		getUser: function(user) {
+			return data;
 		}
 	};
 }]);
@@ -158,8 +188,9 @@ app.factory("channelService", [function() {
 
 app.controller("MainCtrl", ["$scope", "channelService", "userAuth", "$http",
 	function($scope, channelService, userAuth, $http) {
-	$scope.isSignedIn = function() {
-			return userAuth.isLoggedIn();
+
+	$scope.isSignedIn = function() {					
+		return userAuth.isLoggedIn();
 	};
 
 	// Temp variable holding fake channel data
@@ -194,21 +225,24 @@ app.controller("MainCtrl", ["$scope", "channelService", "userAuth", "$http",
 
 // Controller for the top-level index page
 // Global scope to know when a user is signed in
-app.controller("FormCtrl", ["$scope", "channelService", "userAuth", "$http",
-	function($scope, channelService, userAuth, $http) {
+app.controller("FormCtrl", ["$scope", "channelService", "userAuth", "$http", "loginPromise",
+	function($scope, channelService, userAuth, $http, loginPromise) {
+
+	$scope.isSignedIn = function() {					
+		return userAuth.isLoggedIn();
+	};
 
 	$scope.toggleLogin = true;
 
 	$scope.login = function() {
-		console.log("login?");
 		$scope.invalidCred = false;
 		$scope.noAccount = false;
 		if (username && password) {
 			userAuth.login($scope.username, $scope.pass).then(function(res) {
-				console.log(res.user);
-				if (res.user) {
-					userAuth.setUser(res.user);
-					$scope.isSignedIn = true;
+				var user = res.data;
+				console.log(user);
+				if (user.username) {
+					userAuth.setUser(user);
 				} else {
 					$scope.noAccount = true;
 				}
@@ -240,7 +274,9 @@ app.controller("FormCtrl", ["$scope", "channelService", "userAuth", "$http",
 
 // Controller for the home feed
 app.controller("FeedCtrl", ["$scope", "channelService", function($scope, channelService) {
+
 	$scope.activities = channelService.getAllActivities();
+
 }]);
 
 // Controller for the favorites page
@@ -346,4 +382,12 @@ app.controller("CategoriesCtrl", ["$scope", "userAuth", "channelService", functi
 // Controller for the account page
 app.controller("AccountCtrl", ["$scope", "userAuth", function($scope, userAuth) {
 	
+	$scope.user = userAuth.getUser();
+
+	
+
+	$scope.logout = function() {
+		userAuth.logout();
+	};
+
 }]);

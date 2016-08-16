@@ -4,6 +4,7 @@ var mongoose = require("mongoose");
 // The Channels model
 var ChannelSchema = new mongoose.Schema({
 	name: String,
+	channelID: String,
 	type: String,
 	favorite: {type: Boolean, default: false},
 	subscribers: Number,

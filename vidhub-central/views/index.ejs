@@ -28,7 +28,7 @@
 		<nav class="navbar navbar-fixed-top custom-navbar" role="navigation">
 			<div class="container-fluid">
 				<a class="navbar-brand" ui-sref="feed" ng-show="isSignedIn()">VidHub Central</a>
-				<a class="navbar-brand" ui-sref="home" ng-show="!isSignedIn()">VidHub Cenral</a>
+				<a class="navbar-brand" ui-sref="home" ng-show="!isSignedIn()">VidHub Central</a>
 				<div uib-collapse="navCollapsed" class="nav-collapse collapse navbar-collapse">
 					<ul class="nav navbar-nav" ng-if="isSignedIn()">
 						<li><a ui-sref="favorites"><i class="fa fa-heart-o hidden-xs hidden-sm" aria-hidden="true"></i> My Favorites</a></li>
@@ -39,7 +39,7 @@
 						<li><a ui-sref="account"><i class="fa fa-user hidden-xs hidden-sm" aria-hidden="true"></i> My Account</a></li>
 					</ul>
 				</div>
-				<button ng-init="navCollapsed = true" ng-click="navCollapsed = !navCollapsed" class="btn btn-navbar pull-right collapser" ng-if="isSignedIn">
+				<button ng-init="navCollapsed = true" ng-click="navCollapsed = !navCollapsed" class="btn btn-navbar pull-right collapser" ng-if="isSignedIn()">
 					<span class="sr-only">Toggle navigation</span>
 					<i class="fa fa-bars" aria-hidden="true"></i>
 				</button>

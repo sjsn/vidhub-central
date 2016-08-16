@@ -7,7 +7,7 @@
 			<div class="login-form" ng-show="toggleLogin">
 				<h2>Login</h2>
 				<hr class="login-hr" />
-				<p class="inv-error" ng-if="noAccount">Invalid account information. Please try again.</p>
+				<p class="inv-error" ng-if="noAccount">Incorrect account information. Please try again.</p>
 				<p class="inv-error" ng-if="invalidCred">Form must not be blank. Please try again.</p>
 				<div class="form-group">
 					<form ng-submit="login()" name="loginForm">
@@ -26,7 +26,7 @@
 				<h2>Create an Account</h2>
 				<hr class="login-hr" />
 				<p class="inv-error" ng-if="taken">That username is already taken. Please try again.</p>
-				<p class="inv-error" ng-if="invalidCred">Form must not be blank. Please try again.</p>
+				<p class="inv-error" ng-if="invalidCred">Oops. There appears to be something wrong with the form. Ensure all fields are filled in and the passwords match, then try again.</p>
 				<div class="form-group">
 					<form ng-submit="register()" name="registerForm">
 						<label for="name">Full Name:</label>
