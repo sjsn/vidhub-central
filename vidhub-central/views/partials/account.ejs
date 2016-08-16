@@ -6,15 +6,38 @@
 	<hr />
 	<section role="region">
 		<div>
-			<p><span class="acct-title">Username:</span> {{user.username}}</p>
+			<div>
+				<p><span><i class="fa fa-check-circle-o verified" aria-hidden="true"></i> = Verified</span>   <span><i class="fa fa-times-circle-o not-verified" aria-hidden="true"></i> = Not Verified</span></p>
+			</div>
+			<p><span class="acct-title">VidHub Central Username:</span> {{user.username}}</p>
 			<p><span class="acct-title">First Name:</span> {{user.firstName}}</p>
 			<p><span class="acct-title">Last Name:</span> {{user.lastName}}</p>
-			<p><span class="acct-title">YouTube Username:</span> <span ng-show="user.ytusername">{{user.youtubeUsername}}</span><span ng-hide="user.ytusername">YouTube Account not linked</span></p>
-			<p><span class="acct-title">Twitch.Tv Username:</span> <span ng-show="user.twusername">{{user.twitchUsername}}</span><span ng-hide="user.twusername">Twitch.Tv Account not linked</span></p>
+			<p><span class="acct-title">YouTube Username:</span> <span ng-show="user.youtubeUsername">{{user.youtubeUsername}} <i class="fa fa-check-circle-o verified" aria-hidden="true" ng-if="user.youtubeAccessToken"></i><i class="fa fa-times-circle-o not-verified" aria-hidden="true" ng-if="!user.youtubeAccessToken"></i></span><span ng-hide="user.youtubeUsername">YouTube Account not linked</span></p>
+			<p><span class="acct-title">Twitch.Tv Username:</span> <span ng-show="user.twitchUsername">{{user.twitchUsername}} <i class="fa fa-check-circle-o verified" aria-hidden="true" ng-if="user.twitchAccessToken"></i><i class="fa fa-times-circle-o not-verified" aria-hidden="true" ng-if="!user.twitchAccessToken"></i></span><span ng-hide="user.twitchUsername">Twitch.tv Account not linked</span></p>
+		</div>
+		<div class="login-form" ng-if="!user.twitchUsername || !user.youtubeUsername">
+			<h2>Instructions</h2>
+			<p>In order to use this app, please tell us your YouTube username and/or your Twitch username. Then sign in to those accounts via the buttons that will appear below.</p>
+			<p class="inv-error" ng-show="error">Invalid username. Please try again.</p>
+			<hr class="login-hr" />
+			<form name="usernameForm" ng-submit="addUsername(username, service)">
+				<label for="username">{{service}} Username:</label>
+				<input type="text" name="username" id="username" ng-model="username" class="form-control" required />
+				<p ng-show="usernameForm.username.$invalid && usernameForm.username.$touched" class="inv-error">Username cannot be blank</p>
+				<label form="service">Select Service:</label>
+				<br />
+				<input type="radio" name="service" ng-model="service" id="service" value="YouTube" required />Youtube
+				<input type="radio" name="service" ng-model="service" id="service" value="Twitch" required /> Twitch
+				<br />
+				<br />
+				<button type="submit" class="btn btn-default" ng-disabled="usernameForm.$invalid">Add {{service}} Username</button>
+			</form>
 		</div>
 		<div class="act-btns"> 
+			<!-- ng-if="user.youtubeUsername && !user.youtubeAccessToken" -->
+			<!-- ng-if="user.twitchUsername && !user.twitchAccessToken" -->
 			<a class="btn yt-btn" href="/api/auth/youtube"><i class="fa fa-youtube-play" aria-hidden="true"></i>    Link YouTube Account</a>
-			<a class="btn tw-btn" href="/api/auth/twitch"><i class="fa fa-twitch" aria-hidden="true"></i>     Link Twitch.tv Account</a>
+			<a class="btn tw-btn" href="/api/auth/twitch" ><i class="fa fa-twitch" aria-hidden="true"></i>     Link Twitch.tv Account</a>
 		</div>
 	</section>
 </main>

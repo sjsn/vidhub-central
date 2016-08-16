@@ -24,6 +24,7 @@
     "passport-youtube-v3": "^2.0.0",
     "serve-favicon": "~2.3.0",
     "twitch-api": "^0.4.4",
+    "util": "^0.10.3",
     "youtube-api": "^2.0.2"
   }
 }

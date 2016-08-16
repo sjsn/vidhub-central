@@ -21,7 +21,7 @@ router.post("/api/login", passport.authenticate("login",
 	{failureRedirect: "/api/login",
 	failureFlash: true}),
 	function(req, res) {
-		console.log("Successfully logged in: " + req.user);
+		console.log("Successfully logged in: " + req.user.username);
 		if (req.error) {
 			res.status(400).json({
 				msg: req.error
@@ -91,6 +91,43 @@ router.post("/api/users/", function(req, res) {
 
 });
 
+// POST usernames for the users service
+router.post("/api/users/addusername", function(req, res) {
+	console.log(req);
+	if (req.session.passport.user) {
+		User.findOne({_id: req.session.passport.user}, function(err, user) {
+			// Error handling
+			if (err) {
+				console.log("Error adding username" + err);
+				res.status(400).json(err);
+			}
+			if (!user) {
+				console.log("No user matches session.");
+				res.status(401).json({
+					msg: "No user matches session"
+				});
+			}
+			console.log("Adding username: " + req.query.username);
+			if (!req.query.service) {
+				res.status(422).json({
+					msg: "Missing required parameters"
+				})
+			}
+			if (req.query.service.toLowerCase() == "youtube") {
+				user.youtubeUsername = req.query.username;
+				user.save();
+			} else if (req.query.service.toLowerCase() == "twitch") {
+				user.twitchUsername = req.query.username;
+				user.save();
+			}
+			res.user = user;
+			res.status(200);
+		});
+	} else {
+		res.status(401).json({msg: "Not signed in"});
+	}
+});
+
 // GET a logout
 router.get("/api/logout", function(req, res) {
 	console.log("Logging out.");
@@ -106,7 +143,8 @@ function getYTSubs(profile) {
 	// An array of the users subscriptions as subscription opbjects
 	var channelItems = profile.subscriptions.list({
 		part: "snippet",
-		mine: true
+		mine: true,
+		maxResults: 50
 	});
 	console.log(channelItems);
 	channelItems = channelItems.list;
@@ -170,6 +208,7 @@ router.get("/api/auth/youtube", passport.authenticate("youtube"),
 			console.log(req.error);
 			res.status(400);
 		}
+		console.log("Gathering YouTube Information");
 		// Establishes a connection with YouTube's API
 		// Call any Youtube API with 'YouTube.<method>'
 		YouTube.authenticate({
@@ -259,6 +298,7 @@ router.get("/api/auth/twitch", passport.authenticate("twitch"),
 			console.log(req.error);
 			res.status(400);
 		}
+		console.log("Gathering Twitch information")
 		// Establishes a connection with Twitch's API
 		// Call Twitch API with Twitch.<method>, using twitchAccess 
 		// as a param for meothods requring auth

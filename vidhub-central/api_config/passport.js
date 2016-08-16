@@ -7,6 +7,7 @@ var Activitiy = mongoose.model("Activity");
 var secret = require("./secret");
 var YouTubeStrategy = require("passport-youtube-v3").Strategy;
 var TwitchStrategy = require("passport-twitch").Strategy;
+var util = require("util");
 
 // Defines the passport localstrategy
 passport.use("login", new LocalStrategy({
@@ -43,11 +44,9 @@ passport.use("youtube", new YouTubeStrategy({
 		callbackURL: "http://localhost:8080/api/auth/youtube"
 	},
 	function(accessToken, refreshToken, profile, done) {
-		console.log("access tokem from passport: " + accessToken);
 		// Compares the twitch profile name with the users registered profile name
 		var search = {
-			firstName: profile.givenName,
-			lastName: profile.familyName
+			youtubeUsername: profile.displayName
 		};
 
 		//Finds the current user and if gets the relevant channel information
@@ -81,13 +80,14 @@ passport.use("twitch", new TwitchStrategy({
 		clientID: secret.twitch.ID,
 		clientSecret: secret.twitch.secret,
 		// Just for testing. Change when live
-		callbackURL: "http://localhost:8080//api/auth/twitch"
+		callbackURL: "http://localhost:8080/api/auth/twitch",
+		scope: "user_read"
 	},
 	function(accessToken, refreshToken, profile, done) {
+		console.log("access tokem from passport: " + accessToken)
 		// Compares the twitch profile name with the users registered profile name
 		var search = {
-			firstName: profile.givenName,
-			lastName: profile.familyName
+			twitchUsername: profile.displayName
 		};
 
 		//Finds the current user and if gets the relevant channel information

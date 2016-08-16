@@ -202,3 +202,11 @@ main {
 .act-btns {
 	margin-top: 50px;
 }
+
+.verified {
+	color: #009900;
+}
+
+.not-verified {
+	color: red;
+}

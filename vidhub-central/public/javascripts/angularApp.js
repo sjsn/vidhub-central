@@ -109,6 +109,13 @@ app.factory("userAuth", ["$http", "$window", function($http, $window){
 		},
 		getYoutube: function() {
 
+		},
+		addUsername: function(username, service) {
+			return $http({
+				url: "/api/users/addusername",
+				method: "POST",
+				params: {username: username, service: service}
+			});
 		}
 	};
 }]);
@@ -386,11 +393,32 @@ app.controller("CategoriesCtrl", ["$scope", "userAuth", "channelService", functi
 app.controller("AccountCtrl", ["$scope", "userAuth", function($scope, userAuth) {
 	
 	$scope.user = userAuth.getUser();
+	console.log($scope.user);
 
 	$scope.logout = function() {
 		userAuth.logout();
 	};
 
-
+	$scope.error = false;
+	$scope.addUsername = function(username, service) {
+		console.log(username);
+		console.log(service);
+		$scope.error = false;
+		if (username && service) {
+			userAuth.addUsername(username, service).then(function(res) {
+				var user = res.user;
+				if (!user) {
+					$scope.error = true;
+				} else {
+					console.log(user);
+					userAuth.setUser(user);
+				}
+			});
+		} else {
+			$scope.error = true;
+		}
+		$scope.username = "";
+		$scope.service = null;
+	};
 
 }]);
