@@ -26,17 +26,16 @@
 				<p ng-show="usernameForm.username.$invalid && usernameForm.username.$touched" class="inv-error">Username cannot be blank</p>
 				<label form="service">Select Service:</label>
 				<br />
-				<input type="radio" name="service" ng-model="service" id="service" value="YouTube" required />Youtube
-				<input type="radio" name="service" ng-model="service" id="service" value="Twitch" required /> Twitch
+				<label><input type="radio" name="service" ng-model="service" id="service" value="YouTube" required />Youtube</label>
+				<label><input type="radio" name="service" ng-model="service" id="service" value="Twitch" required /> Twitch</label>
 				<br />
 				<br />
 				<button type="submit" class="btn btn-default" ng-disabled="usernameForm.$invalid">Add {{service}} Username</button>
 			</form>
 		</div>
 		<div class="act-btns"> 
-			<!-- ng-if="user.youtubeUsername && !user.youtubeAccessToken" -->
 			<!-- ng-if="user.twitchUsername && !user.twitchAccessToken" -->
-			<a class="btn yt-btn" href="/api/auth/youtube"><i class="fa fa-youtube-play" aria-hidden="true"></i>    Link YouTube Account</a>
+			<a class="btn yt-btn" href="/api/auth/youtube" ng-if="user.youtubeUsername && !user.youtubeAccessToken"><i class="fa fa-youtube-play" aria-hidden="true"></i>    Link YouTube Account</a>
 			<a class="btn tw-btn" href="/api/auth/twitch" ><i class="fa fa-twitch" aria-hidden="true"></i>     Link Twitch.tv Account</a>
 		</div>
 	</section>

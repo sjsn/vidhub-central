@@ -120,7 +120,7 @@ app.factory("userAuth", ["$http", "$window", function($http, $window){
 	};
 }]);
 
-app.factory("channelService", [function() {
+app.factory("channelService", ["$http", function($http) {
 
 	var data = [];
 
@@ -130,11 +130,17 @@ app.factory("channelService", [function() {
 	};
 
 	return {
-		setChannels: function(channels) {
-			data = channels;
+		setChannels: function() {
+			$http.get("/api/channels").then(function(res) {
+				data = res.data.channels;
+				console.log(res.data.channels);
+			});
 		},
 		getChannels: function() {
 			return data;
+		},
+		getActivities: function(id) {
+			return $http.get("/api/channels/" + id + "/activities");
 		},
 		favorite: function(channel) {
 			var count = 0;
@@ -184,13 +190,7 @@ app.factory("channelService", [function() {
 			return categories;
 		},
 		getAllActivities: function() {
-			var activities = [];
-			_.each(data, function(channel) {
-				_.each(channel.activities, function(activity) {
-					activities.push({name: activity.name, date: activity.date, channel: channel});
-				})
-			});
-			return activities;
+			return $http.get("/api/activities");
 		},
 	};
 
@@ -202,29 +202,6 @@ app.controller("MainCtrl", ["$scope", "channelService", "userAuth", "$http",
 	$scope.isSignedIn = function() {					
 		return userAuth.isLoggedIn();
 	};
-
-	// Temp variable holding fake channel data
-	channelService.setChannels([
-		{name: "PewDiePie", subscribers: 40000000, service: "YouTube", favorite: true, tags: ["#minecraft", "#horror", "#gaming"], activities: [{name: "made a video", date: "1/1/16"}, {name: "livestreamed", date: "2/2/16"}]},
-		{name: "Yogscast", subscribers: 10000, service: "YouTube", favorite: false, tags: ["#minecraft", "#gta", "#gaming"], activites: []},
-		{name: "Sips", subscribers: 125, service: "YouTube", favorite: false, tags: [], activities: []},
-		{name: "Grubby", subscribers: 23415, service: "Twitch", favorite: false, tags: [], activities: []},
-		{name: "collegedropouts", subscribers: 123535, service: "YouTube", favorite: true, tags: [], activities: []},
-		{name: "sam", subscribers: 87654, service: "YouTube", favorite: false, tags: [], activities: []},
-		{name: "david", subscribers: 623465, service: "YouTube", favorite: true, tags: [], activities: []},
-		{name: "erica", subscribers: 4325, service: "YouTube", favorite: false, tags: [], activities: []},
-		{name: "prankvprank", subscribers: 72454, service: "YouTube", favorite: true, tags: [], activities: []},
-		{name: "caseyneistat", subscribers: 345221, service: "Twitch", favorite: false, tags: ["#vlog", "#cool"], activities: []},
-		{name: "boardguy420", subscribers: 2346347, service: "YouTube", favorite: true, tags: [], activities: []},
-		{name: "brodiesmith21", subscribers: 234647, service: "YouTube", favorite: false, tags: ["#vlog", "#frisbee", "#sports"], activities: []},
-		{name: "waterisgood", subscribers: 245, service: "YouTube", favorite: false, tags: [], activities: []},
-		{name: "sciencerulez", subscribers: 135245, service: "YouTube", favorite: true, tags: ["#science", "#education"], activities: []},
-		{name: "hotsnews", subscribers: 23452, service: "Twitch", favorite: true, tags: [], activities: []},
-		{name: "Alphadog", subscribers: 6542, service: "YouTube", favorite: false, tags: [], activities: []},
-		{name: "UWEdu", subscribers: 13241, service: "Twitch", favorite: false, tags: [], activities: []},
-		{name: "BinDer", subscribers: 90, service: "YouTube", favorite: false, tags: [], activities: []},
-		{name: "Personify", subscribers: 13, service: "YouTube", favorite: true, tags: [], activities: []}
-	]);
 
 	// Easy tag-click navigation
 	$scope.tagClick = function(tag) {
@@ -241,6 +218,7 @@ app.controller("FormCtrl", ["$scope", "channelService", "userAuth", "$http", "lo
 	$scope.isSignedIn = function() {					
 		return userAuth.isLoggedIn();
 	};
+
 
 	$scope.toggleLogin = true;
 
@@ -285,7 +263,12 @@ app.controller("FormCtrl", ["$scope", "channelService", "userAuth", "$http", "lo
 // Controller for the home feed
 app.controller("FeedCtrl", ["$scope", "channelService", function($scope, channelService) {
 
-	$scope.activities = channelService.getAllActivities();
+	channelService.getAllActivities().then(function(res) {
+		console.log(res.data);
+		$scope.activities = res.data.activities;
+	});
+
+	channelService.setChannels();
 
 }]);
 
@@ -345,24 +328,30 @@ app.controller("ChannelsCtrl", ["$scope", "userAuth", "channelService", "$uibMod
 	};
 
 	$scope.openModal = function(channel) {
-		var modalInstance = $uibModal.open({
-			animation: true,
-			templateUrl: "./partials/channelListModal.ejs",
-			controller: "ModalCtrl",
-			size: "lg",
-			resolve: {
-				channel: function() {
-					return channel;
+		channelService.getActivities(channel._id).then(function(res) {
+			var modalInstance = $uibModal.open({
+				animation: true,
+				templateUrl: "./partials/channelListModal.ejs",
+				controller: "ModalCtrl",
+				size: "lg",
+				resolve: {
+					channel: function() {
+						return channel;
+					},
+					activities: function() {
+						return res.data.activities;
+					}
 				}
-			}
+			});
 		});
 	};
 
 }]);
 
-app.controller("ModalCtrl", ["$scope", "$uibModalInstance", "channel", function($scope, $uibModalInstance, channel) {
+app.controller("ModalCtrl", ["$scope", "$uibModalInstance", "channel", "activities", function($scope, $uibModalInstance, channel, activities) {
 
 	$scope.channel = channel;
+	$scope.activities = activities;
 	$scope.close = function() {
 		$uibModalInstance.dismiss('cancel')
 	};
@@ -393,7 +382,6 @@ app.controller("CategoriesCtrl", ["$scope", "userAuth", "channelService", functi
 app.controller("AccountCtrl", ["$scope", "userAuth", function($scope, userAuth) {
 	
 	$scope.user = userAuth.getUser();
-	console.log($scope.user);
 
 	$scope.logout = function() {
 		userAuth.logout();

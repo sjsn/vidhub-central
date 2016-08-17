@@ -7,7 +7,7 @@
 			</tr>
 		</thead>
 		<tbody>
-			<tr ng-repeat="activity in channel.activities | orderBy: '-date'">
+			<tr ng-repeat="activity in activities | orderBy: '-date'">
 				<td>{{activity.name}}</td>
 				<td>{{activity.date}}</td>
 			</tr>

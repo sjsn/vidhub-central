@@ -11,6 +11,8 @@ var secret = require("../api_config/secret");
 // External API configuration
 var TwitchAPI = require("twitch-api");
 var YouTube = require("youtube-api");
+// For logging objects for debug
+var util = require("util");
 
 /*****************
 * Authentication *
@@ -84,8 +86,9 @@ router.post("/api/users/", function(req, res) {
 						msg: err
 					});
 				}
-				res.user = user;
 			});
+			res.user = user;
+			res.status(200);
 		}
 	});s
 
@@ -93,7 +96,6 @@ router.post("/api/users/", function(req, res) {
 
 // POST usernames for the users service
 router.post("/api/users/addusername", function(req, res) {
-	console.log(req);
 	if (req.session.passport.user) {
 		User.findOne({_id: req.session.passport.user}, function(err, user) {
 			// Error handling
@@ -137,67 +139,97 @@ router.get("/api/logout", function(req, res) {
 	res.status(200);
 });
 
-// Helper function to get the list of all the channels the user is subscribed to
-function getYTSubs(profile) {
-	var channels = [];
-	// An array of the users subscriptions as subscription opbjects
-	var channelItems = profile.subscriptions.list({
+// Recursive helper function to get the current subs and their acitvities of the user
+function getYTSubsRecursive(pageToken, currentChannels, size, index, callback) {
+	YouTube.subscriptions.list({
 		part: "snippet",
 		mine: true,
-		maxResults: 50
-	});
-	console.log(channelItems);
-	channelItems = channelItems.list;
-	for(var i = 0; i < channelItems.length; i++) {
-		var curChannel = channelItems[i].snippet;
-		var channel = new Channel();
-		channel.name = curChannel.title;
-		channel.channelID = curChannel.channelId;
-		channel.type = "Youtube";
-		// May ommit subscriber count if it's too difficult to get
-		// channel.subscribers = curChannel;
-		// Adds the activities of the channel to the users activities feed
-		getYTActs(profile, channel);
-		channels.push(channel);
-	}
-	return channels;
-};
-
-// Helper function to get the list of all the activty the users' subscritions are doing
-function getYTActs(profile, channel) {
-	// Gets the last 100 activities
-	var actItems = profile.activities.list({
-		part: "snippet",
-		channelID: channel.channelID
-
-	}).items;
-	for (var i = 0; i < actItems.length; i++) {
-		var curActivity = actItems[i].snippet;
-		var activity = new Activity();
-		activity.name = curActivity.description;
-		activity.date = curActivity.publishedAt;
-		activity.channel = channel;
-		channel.activities.push(activity);
-		activity.save(function(err) {
-			if (err) {
-				console.log(err);
+		maxResults: 50,
+		order: "alphabetical",
+		pageToken: pageToken
+	}, function(err, data) {
+		if (err) {
+			return console.log("Error: " + err);
+		}
+		if (data) {
+			size += data.items.length;
+			var ready = false;
+			var nextPage = data.nextPageToken;
+			if (!nextPage) {
+				size = size % 50;
 			}
-		})
-	}
-	return channel;
+			var channels = data.items;
+			channels.forEach(function(channel) {
+				var newChannel = new Channel();
+				channel = channel.snippet;
+				newChannel.name = channel.title;
+				newChannel.channelID = channel.resourceId.channelId;
+				newChannel.type = "YouTube";
+				getYTActivitiesRecursive(newChannel, 0, 0, function(channel) {
+					index++;
+					console.log("index: " + index);
+					newChannel = channel;
+					currentChannels.push(newChannel);
+					if (index == size && !nextPage) {
+						callback(currentChannels);
+					}
+				});
+			});
+			if (nextPage) {
+				getYTSubsRecursive(nextPage, currentChannels, size, 0, callback);
+			}
+		} else {
+			callback(null);
+		}
+	});
+}
+
+// Recursive helper function to get the recent activities of the users subs
+function getYTActivitiesRecursive(channel, stackSize, index, callback) {
+	// Sets the date of activity retrieval to one week ago to only display relevent information
+	var beforeDate = new Date(Date.now() - 1000 * 60 * 60 * 24 * 7);
+	beforeDate = beforeDate.toISOString();
+	var id = channel.channelID;
+	YouTube.activities.list({
+		part: "snippet",
+		channelId: id,
+		publishedAfter: beforeDate
+	}, function(err, data) {
+		if (err) {
+			console.log("Error: " + err);
+		}
+		if (data) {
+			stackSize = data.items.length;
+			var activities = data.items;
+			activities.forEach(function(activity) {
+				var newAct = new Activity();
+				activity = activity.snippet;
+				newAct.name = activity.title;
+				newAct.date = activity.publishedAt;
+				newAct.channel = channel;
+				newAct.save();
+				channel.activities.push(newAct);
+				index++;
+			});
+		}
+		if (stackSize == index) {
+			callback(channel);
+		}
+	});
 }
 
 // Helper function to save the channels and update the user in the db
 function saveChannels(channels, user) {
 	for (var i = 0; i < channels.length; i++) {
-		channel[i].user = req.user;
-		channel[i].save(function(err, channel) {
+		channels[i].user = user;
+		channels[i].save(function(err, channel) {
 			if (err) {
 				console.log(err);
 			}
-			user.channels.push(channel);
 		});
+		user.channels.push(channels[i]);
 	}
+	user.save();
 	return user;
 }
 
@@ -208,23 +240,26 @@ router.get("/api/auth/youtube", passport.authenticate("youtube"),
 			console.log(req.error);
 			res.status(400);
 		}
-		console.log("Gathering YouTube Information");
 		// Establishes a connection with YouTube's API
-		// Call any Youtube API with 'YouTube.<method>'
+		// Call any Youtube API endpoint with 'YouTube.<method>'
 		YouTube.authenticate({
 			type: "oauth",
 			token: req.user.youtubeAccessToken
 		});
+		var channels = [];
 		// Gets all channels that the user is subscribed to
-		var channels = getYTSubs(YouTube);
-		var user = req.user;
-		// Adds all channels to the database
-		if (channels.length) {
-			user = saveChannels(channels, user);
-		}
-		res.user = user;
-		console.log(user);
-		return res.user;
+		getYTSubsRecursive(null, [], 0, 0, function(userChannels) {
+			channels = userChannels;
+			console.log("Last Channels (Needs to be below 'M' to pass): " + channels[channels.length - 1]);
+			var user = req.user;
+			// Adds all channels to the database
+			if (channels) {
+				user = saveChannels(channels, user);
+			}
+			console.log("User: " + user);
+			res.user = user;
+			res.status(200);
+		});
 	}
 );
 
@@ -330,5 +365,41 @@ router.get("/api/auth/twitch", passport.authenticate("twitch"),
 ***********/
 
 // GET a list of the profiles channels
+router.get("/api/channels", function(req, res) {
+	if (req.session.passport) {
+		User.findOne({_id: req.session.passport.user}, function(err, user) {
+			Channel.find({user: user._id}, function(err, channels) {
+				res.channels = channels;
+				res.status(200).json({channels: channels});
+			});
+		});
+	} else {
+		res.status(401).json({msg: Unauthorized});
+	}
+});
+
+// Middleware to get the current channel given a channel id
+router.param("channelID", function(req, res, next, id) {
+	Channel.findOne({_id: id}, function(err, channel) {
+		res.channel = channel;
+		return next();
+	});
+});
+
+// GET a list of a channels activities
+router.get("/api/channels/:channelID/activities", function(req, res) {
+	Activity.find({channel: res.channel._id}, function(err, activities) {
+		if (err) {
+			console.log(err);
+		}
+		res.activities = activities;
+		res.status(200).json({activities: activities});
+	});
+});
+
+// GET a list of ALL recent activity
+router.get("/api/activities", function(req, res) {
+	// Recursively get all channel activity
+});
 
 module.exports = router;

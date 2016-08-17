@@ -27,7 +27,7 @@
 						<tr ng-repeat="channel in channels | orderBy: '-subscribers' | filter: searchTerm">
 							<td ng-click="openModal(channel)" class="clickable-row">{{channel.name}}</td>
 							<td ng-click="openModal(channel)" class="clickable-row">{{channel.subscribers}}</td>
-							<td ng-click="openModal(channel)" class="clickable-row">{{channel.service}}</td>
+							<td ng-click="openModal(channel)" class="clickable-row">{{channel.type}}</td>
 							<td>
 								<span ng-repeat="tag in channel.tags| orderBy: '-tag'">
 									<span ui-sref="categories" ng-click="tagClick(tag)" class="tag-link">{{tag}}</span>

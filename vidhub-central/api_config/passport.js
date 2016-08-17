@@ -7,6 +7,7 @@ var Activitiy = mongoose.model("Activity");
 var secret = require("./secret");
 var YouTubeStrategy = require("passport-youtube-v3").Strategy;
 var TwitchStrategy = require("passport-twitch").Strategy;
+// For logging objects for debug
 var util = require("util");
 
 // Defines the passport localstrategy
@@ -59,10 +60,9 @@ passport.use("youtube", new YouTubeStrategy({
 					message: "User not found"
 				})
 			}
-			if (!user.youtubeAccessToken || !user.youtubeUsername) {
-				user.youtubeUsername = profile.displayName;
+			if (!user.youtubeAccessToken || user.youtubeAccessToken != accessToken) {
 				user.youtubeAccessToken = accessToken;
-				console.log("Saving user in psprt: " + user);
+				// console.log("Saving user in psprt: " + user);
 				user.save(function(err, user) {
 					if (err) {
 						return done(err, null);
@@ -100,8 +100,7 @@ passport.use("twitch", new TwitchStrategy({
 					message: "User not found"
 				})
 			}
-			if (!user.twitchAccessToken) {
-				user.twitchUsername = profile.displayName;
+			if (!user.twitchAccessToken || user.twitchAccessToken != accessToken) {
 				user.twitchAccessToken = accessToken;
 				user.save(function(err, user) {
 					if (err) {
