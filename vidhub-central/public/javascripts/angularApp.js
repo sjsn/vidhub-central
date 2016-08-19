@@ -52,7 +52,14 @@ app.config(["$stateProvider", "$urlRouterProvider",
 			"channels", {
 				url: "/channels",
 				templateUrl: "./partials/channels.ejs",
-				controller: "ChannelsCtrl"
+				controller: "ChannelsCtrl",
+				resolve: {
+					"channelPromise": [
+						"channelService", function(channelService) {
+							return channelService.getChannels();
+						}
+					]
+				}
 			}
 		).state(
 			"categories", {
@@ -141,7 +148,7 @@ app.factory("channelService", ["$http", function($http) {
 			});
 		},
 		getChannels: function() {
-			return data;
+			return $http.get("/api/channels");
 		},
 		getActivities: function(id) {
 			return $http.get("/api/channels/" + id + "/activities");
@@ -297,7 +304,7 @@ app.controller("FeedCtrl", ["$scope", "channelService", "userAuth", "feedPromise
 // Controller for the favorites page
 app.controller("FavCtrl", ["$scope", "userAuth", "channelService", "favsPromise", function($scope, userAuth, channelService, favsPromise) {
 
-	console.log(favsPromise.data.favorites);
+	// Get array of all favorites
 	$scope.channels = favsPromise.data.favorites;
 
 	// Handles favoriting/unvfavoriting a channel
@@ -319,10 +326,10 @@ app.controller("FavCtrl", ["$scope", "userAuth", "channelService", "favsPromise"
 }]);
 
 // Controller for the channel list page
-app.controller("ChannelsCtrl", ["$scope", "userAuth", "channelService", "$uibModal",  function($scope, userAuth, channelService, $uibModal) {
+app.controller("ChannelsCtrl", ["$scope", "userAuth", "channelService", "$uibModal", "channelPromise",  function($scope, userAuth, channelService, $uibModal, channelPromise) {
 
 	// Gets array of all channels
-	$scope.channels = channelService.getChannels();
+	$scope.channels = channelPromise.data.channels;
 
 	// Handles favoriting/unvfavoriting a channel
 	// Can only have 12 favorites at a time
@@ -341,30 +348,24 @@ app.controller("ChannelsCtrl", ["$scope", "userAuth", "channelService", "$uibMod
 	};
 
 	$scope.openModal = function(channel) {
-		channelService.getActivities(channel._id).then(function(res) {
-			var modalInstance = $uibModal.open({
-				animation: true,
-				templateUrl: "./partials/channelListModal.ejs",
-				controller: "ModalCtrl",
-				size: "lg",
-				resolve: {
-					channel: function() {
-						return channel;
-					},
-					activities: function() {
-						return res.data.activities;
-					}
+		var modalInstance = $uibModal.open({
+			animation: true,
+			templateUrl: "./partials/channelListModal.ejs",
+			controller: "ModalCtrl",
+			size: "lg",
+			resolve: {
+				channel: function() {
+					return channel;
 				}
-			});
+			}
 		});
 	};
 
 }]);
 
-app.controller("ModalCtrl", ["$scope", "$uibModalInstance", "channel", "activities", function($scope, $uibModalInstance, channel, activities) {
+app.controller("ModalCtrl", ["$scope", "$uibModalInstance", "channel", function($scope, $uibModalInstance, channel) {
 
 	$scope.channel = channel;
-	$scope.activities = activities;
 	$scope.close = function() {
 		$uibModalInstance.dismiss('cancel')
 	};
@@ -375,7 +376,6 @@ app.controller("ModalCtrl", ["$scope", "$uibModalInstance", "channel", "activiti
 app.controller("CategoriesCtrl", ["$scope", "userAuth", "channelService", function($scope, userAuth, channelService) {
 
 	$scope.categories = channelService.getCategories();
-	console.log($scope.categories);
 
 	// Handles favoriting/unvfavoriting a channel
 	// Can only have 12 favorites at a time

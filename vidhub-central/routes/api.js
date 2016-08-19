@@ -375,6 +375,46 @@ router.get("/api/auth/twitch", isAuthenticated, passport.authenticate("twitch"),
 * Channels *
 ***********/
 
+// Helper function to recursively get all of the tag names 
+function getTagsRecursive(channels, stackSize, index, processed, callback) {
+	if (stackSize >= index) {
+		var temp = channels[index];
+		var channel = {_id: temp.id, name: temp.name, type: temp.type, tags: [], activities: temp.activities};
+		Tags.find({channels: channel._id}, function(err, tags) {
+			if (err) {
+				console.log(err);
+			}
+			for (var i = 0; i < tags.length; i++) {
+				tags[i] = tags[i].name;
+			}
+			channel.tags = tags;
+			processed.push(channel);
+			if (stackSize == index) {
+				callback(processed);
+			}
+			getTagsRecursive(channels, stackSize, index + 1, processed, callback);
+		});
+	}
+}
+
+// Helper function to recursively get all of the activities
+function getActivitiesRecursive(channels, stackSize, index, processed, callback) {
+	if (stackSize >= index) {
+		channel = channels[index];
+		Activity.find({channelID: channel._id}, function(err, activities) {
+			if (err) {
+				console.log(err);
+			}
+			channel.activities = activities;
+			processed.push(channel);
+			if (stackSize == index) {
+				callback(processed);
+			}
+			getActivitiesRecursive(channels, stackSize, index + 1, processed, callback);
+		});
+	}
+};
+
 // Middleware to get the current channel given a channel id
 router.param("channelID", function(req, res, next, id) {
 	Channel.findOne({_id: id}, function(err, channel) {
@@ -387,8 +427,11 @@ router.param("channelID", function(req, res, next, id) {
 router.get("/api/channels", isAuthenticated, function(req, res) {
 	User.findOne({_id: req.session.passport.user}, function(err, user) {
 		Channel.find({user: user._id}, function(err, channels) {
-			// Conver all tagID's to tag names...
-			res.status(200).json(channels);
+			getTagsRecursive(channels, channels.length - 1, 0, [], function(processed) {
+				getActivitiesRecursive(processed, processed.length - 1, 0, [], function(results) {
+					res.status(200).json({channels: results});
+				});
+			});
 		});
 	});
 });
@@ -397,82 +440,11 @@ router.get("/api/channels", isAuthenticated, function(req, res) {
 router.get("/api/channels/:channelID", isAuthenticated, function(req, res) {
 	User.findOne({_id: req.session.passport.user}, function(err, user) {
 		Channel.findOne({_id: res.channel._id}, function(err, channel) {
-			// Still need to convert activities/tags of channel
-			res.status(200).json(channel);
-		});
-	});
-});
-
-// GET a list of a channels activities
-router.get("/api/channels/:channelID/activities", isAuthenticated, function(req, res) {
-	Activity.find({channelID: res.channel._id}, function(err, activities) {
-		if (err) {
-			console.log(err);
-		}
-		res.status(200).json({activities: activities});
-	});
-});
-
-// GET a list of all of a channels tags
-router.get("/api/channels/:channelID/tags", isAuthenticated, function(req, res) {
-	var channel = res.channel;
-	Tags.find({channels: channel._id}, function(err, tags) {
-		var results = {channel: channel.name, tags: []};
-		tags.forEach(function(tag) {
-			results.tags.push(tag.name);
-		});
-		if (err) {
-			console.log(err);
-		}
-		res.status(200).json(results)
-	});
-});
-
-// POST a new tag to a channel
-router.post("/api/channels/:channelID/tags", isAuthenticated, function(req, res) {
-	var channel = res.channel;
-	Tags.findOne({name: req.body.tag}, function(err, tag) {
-		if (err) {
-			console.log(err);
-		}
-		var newTag;
-		if (!tag) {
-			newTag = new Tags();
-			newTag.name = req.body.tag;
-			newTag.channels.push(channel);
-		} else {
-			newTag = tag;
-			newTag.channels.push(channel);
-		}
-		newTag.save();
-		channel.tags.push(newTag);
-		channel.save(function(err, channel) {
-		if (err) {
-			console.log(err);
-		}
-		res.status(200).json(channel);
-		});
-	});
-});
-
-// DELETE a tag from a channel
-router.delete("/api/channels/:channelID/tags", isAuthenticated, function(req, res) {
-	var channel = res.channel;
-	var tag = req.body.tag;
-	for (var i = 0; i < channel.tags.length; i++) {
-		if (channel.tags[i] == tag._id) {
-			channel.tags[i].pop();
-			channel.save();
-		}
-	}
-	Tags.findOne({name: req.tag}, function(err, tag) {
-		if (err) {
-			console.log(err);
-		}
-		tag.remove(function(err) {
-			if (err) {
-				console.log(err);
-			}
+			getTagsRecursive([channel], 0, 0, [], function(processed) {
+				getActivitiesRecursive([processed[0]], 0, 0, [], function(results) {
+					res.status(200).json({channel: results[0]})
+				});
+			});
 		});
 	});
 });
@@ -521,7 +493,7 @@ router.get("/api/tags", isAuthenticated, function(req, res) {
 });
 
 // GET a list of all channels that belong to a single tag
-router.get("/api/tags/:tagID/channels", isAuthenticated, function(req, res) {
+router.get("/api/tags/:tagID", isAuthenticated, function(req, res) {
 	var tag = res.tag;
 	Channel.find({tags: tag._id}, function(err, channels) {
 		if (err) {
@@ -535,54 +507,9 @@ router.get("/api/tags/:tagID/channels", isAuthenticated, function(req, res) {
 	});
 });
 
-// GET a list of all of specific channels activities with a specific tag
-router.get("/api/tags/:tagID/channels/:channelID/activities", isAuthenticated, function(req, res) {
-
-});
-
 /************
 * Favorites *
 ************/
-
-// Helper function to recursively get all of the tag names 
-function getTagsRecursive(channels, stackSize, index, processed, callback) {
-	if (stackSize >= index) {
-		var temp = channels[index];
-		var channel = {_id: temp.id, name: temp.name, type: temp.type, tags: [], activities: temp.activities};
-		Tags.find({channels: channel._id}, function(err, tags) {
-			if (err) {
-				console.log(err);
-			}
-			for (var i = 0; i < tags.length; i++) {
-				tags[i] = tags[i].name;
-			}
-			channel.tags = tags;
-			processed.push(channel);
-			if (stackSize == index) {
-				callback(processed);
-			}
-			getTagsRecursive(channels, stackSize, index + 1, processed, callback);
-		});
-	}
-}
-
-// Helper function to recursively get all of the activities
-function getActivitiesRecursive(channels, stackSize, index, processed, callback) {
-	if (stackSize >= index) {
-		channel = channels[index];
-		Activity.find({channelID: channel._id}, function(err, activities) {
-			if (err) {
-				console.log(err);
-			}
-			channel.activities = activities;
-			processed.push(channel);
-			if (stackSize == index) {
-				callback(processed);
-			}
-			getActivitiesRecursive(channels, stackSize, index + 1, processed, callback);
-		});
-	}
-};
 
 // GET a list of all favorite channels with usable activities/tags
 router.get("/api/favorites", isAuthenticated, function(req, res) {
