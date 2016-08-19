@@ -109,8 +109,8 @@ router.post("/api/users/", function(req, res) {
 				if (err) {
 					console.log(err);
 				}
+				res.status(201).json(user);
 			});
-			res.status(200).json(user);
 		}
 	});
 });
@@ -138,7 +138,7 @@ router.post("/api/users/:userID/addusername", isAuthenticated, function(req, res
 			user.twitchUsername = req.body.username;
 			user.save();
 		}
-		res.status(200).json(user);
+		res.status(201).json(user);
 	} else {
 		res.status(401).json({msg: "Not signed in"});
 	}
@@ -153,7 +153,7 @@ router.get("/api/logout", function(req, res) {
 });
 
 // Recursive helper function to get the current subs and their acitvities of the user
-function getYTSubsRecursive(pageToken, currentChannels, size, index, callback) {
+function getYTSubsRecursive(pageToken, currentChannels, size, index, user, callback) {
 	YouTube.subscriptions.list({
 		part: "snippet",
 		mine: true,
@@ -178,7 +178,7 @@ function getYTSubsRecursive(pageToken, currentChannels, size, index, callback) {
 				newChannel.name = channel.title;
 				newChannel.channelID = channel.resourceId.channelId;
 				newChannel.type = "YouTube";
-				getYTActivitiesRecursive(newChannel, 0, 0, function(channel) {
+				getYTActivitiesRecursive(newChannel, 0, 0, user, function(channel) {
 					index++;
 					console.log("index: " + index);
 					newChannel = channel;
@@ -189,7 +189,7 @@ function getYTSubsRecursive(pageToken, currentChannels, size, index, callback) {
 				});
 			});
 			if (nextPage) {
-				getYTSubsRecursive(nextPage, currentChannels, size, 0, callback);
+				getYTSubsRecursive(nextPage, currentChannels, size, 0, user, callback);
 			}
 		} else {
 			callback(null);
@@ -199,7 +199,7 @@ function getYTSubsRecursive(pageToken, currentChannels, size, index, callback) {
 
 // Recursive helper function to get the recent activities of the users subs
 // Needs to be recursive due to YouTube's API happening in 50 result increments & promises
-function getYTActivitiesRecursive(channel, stackSize, index, callback) {
+function getYTActivitiesRecursive(channel, stackSize, index, user, callback) {
 	// Sets the date of activity retrieval to one week ago to only display relevent information
 	var beforeDate = new Date(Date.now() - 1000 * 60 * 60 * 24 * 7);
 	beforeDate = beforeDate.toISOString();
@@ -220,6 +220,7 @@ function getYTActivitiesRecursive(channel, stackSize, index, callback) {
 				var newAct = new Activity();
 				activity = activity.snippet;
 				newAct.name = activity.title;
+				newAct.user = user;
 				newAct.date = activity.publishedAt;
 				newAct.channelName = channel.name;
 				newAct.channelID = channel._id;
@@ -269,11 +270,11 @@ router.get("/api/auth/youtube", isAuthenticated, passport.authenticate("youtube"
 		});
 		var channels = [];
 		// Gets all channels that the user is subscribed to
-		getYTSubsRecursive(null, [], 0, 0, function(userChannels) {
+		getYTSubsRecursive(null, [], 0, 0, req.session.passport.user, function(userChannels) {
 			// Adds all channels to the database
 			if (userChannels) {
 				saveChannels(userChannels, req.user, function(user) {
-					res.status(200).json(user);
+					res.status(201).json(user);
 				});
 			}
 		});
@@ -376,11 +377,11 @@ router.get("/api/auth/twitch", isAuthenticated, passport.authenticate("twitch"),
 ***********/
 
 // Helper function to recursively get all of the tag names 
-function getTagsRecursive(channels, stackSize, index, processed, callback) {
+function getTagsRecursive(channels, stackSize, index, processed, user, callback) {
 	if (stackSize >= index) {
 		var temp = channels[index];
-		var channel = {_id: temp.id, name: temp.name, type: temp.type, tags: [], activities: temp.activities};
-		Tags.find({channels: channel._id}, function(err, tags) {
+		var channel = {_id: temp.id, name: temp.name, favorite: temp.favorite,type: temp.type, tags: [], activities: temp.activities};
+		Tags.find({channels: channel._id, user: user}, function(err, tags) {
 			if (err) {
 				console.log(err);
 			}
@@ -392,16 +393,16 @@ function getTagsRecursive(channels, stackSize, index, processed, callback) {
 			if (stackSize == index) {
 				callback(processed);
 			}
-			getTagsRecursive(channels, stackSize, index + 1, processed, callback);
+			getTagsRecursive(channels, stackSize, index + 1, processed, user, callback);
 		});
 	}
 }
 
 // Helper function to recursively get all of the activities
-function getActivitiesRecursive(channels, stackSize, index, processed, callback) {
+function getActivitiesRecursive(channels, stackSize, index, processed, user, callback) {
 	if (stackSize >= index) {
 		channel = channels[index];
-		Activity.find({channelID: channel._id}, function(err, activities) {
+		Activity.find({channelID: channel._id, user: user}, function(err, activities) {
 			if (err) {
 				console.log(err);
 			}
@@ -410,14 +411,17 @@ function getActivitiesRecursive(channels, stackSize, index, processed, callback)
 			if (stackSize == index) {
 				callback(processed);
 			}
-			getActivitiesRecursive(channels, stackSize, index + 1, processed, callback);
+			getActivitiesRecursive(channels, stackSize, index + 1, processed, user, callback);
 		});
 	}
 };
 
 // Middleware to get the current channel given a channel id
 router.param("channelID", function(req, res, next, id) {
-	Channel.findOne({_id: id}, function(err, channel) {
+	Channel.findOne({_id: id, user: req.session.passport.user}, function(err, channel) {
+		if (err) {
+			console.log(err);
+		}
 		res.channel = channel;
 		return next();
 	});
@@ -425,25 +429,27 @@ router.param("channelID", function(req, res, next, id) {
 
 // GET a list of the profiles channels
 router.get("/api/channels", isAuthenticated, function(req, res) {
-	User.findOne({_id: req.session.passport.user}, function(err, user) {
-		Channel.find({user: user._id}, function(err, channels) {
-			getTagsRecursive(channels, channels.length - 1, 0, [], function(processed) {
-				getActivitiesRecursive(processed, processed.length - 1, 0, [], function(results) {
+	var user = req.session.passport.user;
+	Channel.find({user: user}, function(err, channels) {
+		if (channels.length) {
+			getTagsRecursive(channels, channels.length - 1, 0, [], user, function(processed) {
+				getActivitiesRecursive(processed, processed.length - 1, 0, [], user, function(results) {
 					res.status(200).json({channels: results});
 				});
 			});
-		});
+		} else {
+			res.status(200).json({channels: []});
+		}
 	});
 });
 
 // GET all of the specific details about a specific channel
 router.get("/api/channels/:channelID", isAuthenticated, function(req, res) {
-	User.findOne({_id: req.session.passport.user}, function(err, user) {
-		Channel.findOne({_id: res.channel._id}, function(err, channel) {
-			getTagsRecursive([channel], 0, 0, [], function(processed) {
-				getActivitiesRecursive([processed[0]], 0, 0, [], function(results) {
-					res.status(200).json({channel: results[0]})
-				});
+	var user = req.session.passport.user;
+	Channel.findOne({_id: res.channel._id, user: user}, function(err, channel) {
+		getTagsRecursive([channel], 0, 0, [], user, function(processed) {
+			getActivitiesRecursive([processed[0]], 0, 0, [], user, function(results) {
+				res.status(200).json({channel: results[0]})
 			});
 		});
 	});
@@ -455,7 +461,7 @@ router.post("/api/channels/:channelID/favorite", isAuthenticated, function(req, 
 		if (err) {
 			console.log(err);
 		}
-		res.status(200).json(channel);
+		res.status(201).json(channel);
 	}); 
 });
 
@@ -463,14 +469,13 @@ router.post("/api/channels/:channelID/favorite", isAuthenticated, function(req, 
 * Activities *
 *************/
 
-
 // GET a list of ALL recent activity
 router.get("/api/activities", isAuthenticated, function(req, res) {
-	Activity.find().then(function(activities) {
+	Activity.find({user: req.session.passport.user}).then(function(activities) {
 		if (activities) {
-			res.status(200).json(activities);
+			res.status(200).json({activities: activities});
 		} else {
-			res.status(200).json({msg: "No activities found"});
+			res.status(200).json({activities: []});
 		}
 	});
 });
@@ -479,9 +484,29 @@ router.get("/api/activities", isAuthenticated, function(req, res) {
 * Tags *
 *******/
 
+// Helper function to get all of the channels associated with the tags
+function getChannelsRecursive(tags, stackSize, index, processed, user, callback) {
+	if (stackSize >= index) {
+		tag = tags[index];
+		Channel.find({tags: tag._id, user: user}, function(err, channels) {
+			if (err) {
+				console.log(err);
+			}
+			getActivitiesRecursive(channels, channels.length - 1, 0, [], user, function(results) {
+				tag.channels = results;
+				processed.push(tag);
+				if (stackSize == index) {
+					callback(processed);
+				}
+				getChannelsRecursive(tags, stackSize, index + 1, processed, user, callback);
+			});
+		});
+	}
+}
+
 // Middleware to get the tag given the tagID
 router.param("tagID", function(req, res, next, id) {
-	Tags.findOne({_id: id}, function(err, tag) {
+	Tags.findOne({_id: id, user: req.session.passport.user}, function(err, tag) {
 		res.tag = tag;
 		return next();
 	});
@@ -489,21 +514,82 @@ router.param("tagID", function(req, res, next, id) {
 
 // GET a list of all channel tags
 router.get("/api/tags", isAuthenticated, function(req, res) {
-
+	var user = req.session.passport.user;
+	Tags.find({user: user}).then(function(tags) {
+		if (tags.length) {
+			getChannelsRecursive(tags, tags.length - 1, 0, [], user, function(processed) {
+				tags = processed;
+				res.status(200).json({tags: tags});
+			});
+		} else {
+			res.status(200).json({tags: []});
+		}
+	});
 });
 
-// GET a list of all channels that belong to a single tag
-router.get("/api/tags/:tagID", isAuthenticated, function(req, res) {
-	var tag = res.tag;
-	Channel.find({tags: tag._id}, function(err, channels) {
+// POST a new tag
+router.post("/api/tags", isAuthenticated, function(req, res) {
+	var user = req.session.passport.user;
+	Tags.findOne({name: req.body.tag, user: user}, function(err, tag) {
 		if (err) {
 			console.log(err);
 		}
-		var results = {tag: tag.name, channels: []};
-		channels.forEach(function(channel) {
-			results.channels.push({id: channel._id, name: channel.name});
-		});
-		res.status(200).json(results);
+		// If tag exists
+		if (tag) {
+			console.log(req.body.channel);
+			Channel.findOne({tags: tag._id, user: user, _id: req.body.channel._id}, function(err, channel) {
+				if (err) {
+					console.log(err);
+				}
+				if (channel) {
+					console.log(channel);
+					res.status(200).json({error: "Tag already exists"});
+				} else {
+					channel = req.body.channel;
+					Channel.findOne({_id: channel._id, user: user}, function(err, newChannel) {
+						if (err) {
+							console.log(err);
+						}
+						tag.channels.push(newChannel);
+						newChannel.tags.push(tag);
+						tag.save(function(err, tag) {
+							if (err) {
+								console.log(err);
+							}
+							newChannel.save(function(err, channel) {
+								if (err) {
+									console.log(err);
+								}
+								res.status(201).json("Tag added successfully");
+							});
+						});
+					});
+				}
+			});
+		} else {
+			// If tag is brand new
+			var tag = new Tags();
+			tag.name = req.body.tag;
+			tag.user = req.session.passport.user;
+			tag.channels.push(req.body.channel);
+			Channel.findOne({_id: req.body.channel._id, user: user}, function(err, channel) {
+				if (err) {
+					console.log(err);
+				}
+				channel.tags.push(tag);
+				tag.save(function(err, tag) {
+					if (err) {
+						console.log(err);
+					}
+					channel.save(function(err, channel) {
+						if (err) {
+							console.log(err);
+						}
+						res.status(201).json("Tag created successfully");
+					})
+				});
+			});
+		}
 	});
 });
 
@@ -513,13 +599,18 @@ router.get("/api/tags/:tagID", isAuthenticated, function(req, res) {
 
 // GET a list of all favorite channels with usable activities/tags
 router.get("/api/favorites", isAuthenticated, function(req, res) {
-	Channel.find({favorite: true}, function(err, channels) {
-		getTagsRecursive(channels, channels.length - 1, 0, [], function(processed) {
-			channels = processed;
-			getActivitiesRecursive(channels, channels.length - 1, 0, [], function(results) {
-				res.status(200).json({favorites: results});
+	var user = req.session.passport.user;
+	Channel.find({favorite: true, user: user}, function(err, channels) {
+		if (channels.length) {
+			getTagsRecursive(channels, channels.length - 1, 0, [], user, function(processed) {
+				channels = processed;
+				getActivitiesRecursive(channels, channels.length - 1, 0, [], user, function(results) {
+					res.status(200).json({favorites: results});
+				});
 			});
-		});
+		} else {
+			res.status(200).json({favorites: []});
+		}
 	});
 });
 

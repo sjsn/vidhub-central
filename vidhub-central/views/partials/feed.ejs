@@ -1,24 +1,33 @@
 <main class="container" ng-show="isSignedIn()">
 	<section role="region">
-		<h2><i class="fa fa-rss" aria-hidden="true"></i> Live Feed<button ng-click="refresh()" class="btn btn-primary refresh-btn"><i class="fa fa-refresh" ng-class="{loading: loading}" aria-hidden="true"></i></button></h2>
+		<h2><i class="fa fa-rss" aria-hidden="true"></i> Live Feed<button ng-click="refresh()" class="btn btn-primary refresh-btn" ng-if="!loading"><i class="fa fa-refresh" ng-class="{loading: refreshing}" aria-hidden="true"></i></button></h2>
 	</section>
 	<hr />
 	<section role="region">
-		<table class="table table-striped">
-			<thead>
-				<tr>
-					<th>Channel</th>
-					<th>Activity</th>
-					<th>Date</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr ng-repeat="activity in activities | orderBy: '-date' | unique:'name'">
-					<td>{{activity.channelName}}</td>
-					<td>{{activity.name}}</td>
-					<td>{{activity.date | date:'short'}}</td>
-				</tr>
-			</tbody>
-		</table>
+		<div ng-if="!loading && activities.length">
+			<table class="table table-striped">
+				<thead>
+					<tr>
+						<th>Channel</th>
+						<th>Activity</th>
+						<th>Date</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr ng-repeat="activity in activities | orderBy: '-date' | unique:'name'">
+						<td>{{activity.channelName}}</td>
+						<td>{{activity.name}}</td>
+						<td>{{activity.date | date:'short'}}</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<div ng-if="!loading && !activities.length" class="empty-msg">
+			<p class="no-content">No recent activity. Either ensure your account is linked or subscribe to more channels on YouTube and Twitch!</p>
+			<p><a ui-sref="account">Click here to link an account.</a></p>
+		</div>
+		<div ng-if="!activities.length && loading" class="loading-container">
+			<p class="loading-icon"><i class="fa fa-spinner loading" aria-hidden="true"></i></p>
+		</div>
 	</section>
 </main>

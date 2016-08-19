@@ -25,47 +25,33 @@ app.config(["$stateProvider", "$urlRouterProvider",
 			"feed", {
 				url: "/feed",
 				templateUrl: "./partials/feed.ejs",
-				controller: "FeedCtrl",
-				resolve: {
-					"feedPromise": [
-						"channelService" , function(channelService) {
-							return channelService.getAllActivities();
-						}
-					]
-				}
+				controller: "FeedCtrl"
 			}
 		)
 		.state(
 			"favorites", {
 				url: "/favorites",
 				templateUrl: "./partials/favorites.ejs",
-				controller: "FavCtrl",
-				resolve: {
-					"favsPromise": [
-						"channelService", function(channelService) {
-							return channelService.getFavorites();
-						}
-					]
-				}
+				controller: "FavCtrl"
 			}
 		).state(
 			"channels", {
 				url: "/channels",
 				templateUrl: "./partials/channels.ejs",
-				controller: "ChannelsCtrl",
-				resolve: {
-					"channelPromise": [
-						"channelService", function(channelService) {
-							return channelService.getChannels();
-						}
-					]
-				}
+				controller: "ChannelsCtrl"
 			}
 		).state(
 			"categories", {
 				url: "/categories",
 				templateUrl: "./partials/categories.ejs",
-				controller: "CategoriesCtrl"
+				controller: "CategoriesCtrl",
+				resolve: {
+					"tagsPromise": [
+						"channelService", function(channelService) {
+							return channelService.getTags();
+						}
+					]
+				}
 			}
 		).state(
 			"account", {
@@ -142,10 +128,8 @@ app.factory("channelService", ["$http", function($http) {
 	};
 
 	return {
-		setChannels: function() {
-			$http.get("/api/channels").then(function(res) {
-				data = res.data;
-			});
+		setChannels: function(channels) {
+			data = channels;	
 		},
 		getChannels: function() {
 			return $http.get("/api/channels");
@@ -173,6 +157,9 @@ app.factory("channelService", ["$http", function($http) {
 				}
 			});
 		},
+		getTags: function() {
+			return $http.get("/api/tags");
+		},
 		addTag: function(channel, tag) {
 			if (tag) {
 				// Formats tag to keep them all uniform
@@ -183,9 +170,9 @@ app.factory("channelService", ["$http", function($http) {
 				tag = tag.join("");
 				tag = "#" + tag.toLowerCase();
 				$http({
-					url: "/api/channels/" + channel._id + "/tags",
+					url: "/api/tags",
 					method: "POST",
-					data: {tag: tag}
+					data: {tag: tag, channel: channel}
 				}).then(function() {
 					var index = getChannelIndex(channel);
 					data[index].tags.push(tag);
@@ -284,28 +271,37 @@ app.controller("FormCtrl", ["$scope", "channelService", "userAuth", "$http", "lo
 }]);
 
 // Controller for the home feed
-app.controller("FeedCtrl", ["$scope", "channelService", "userAuth", "feedPromise", function($scope, channelService, userAuth, feedPromise) {
+app.controller("FeedCtrl", ["$scope", "channelService", "userAuth", function($scope, channelService, userAuth) {
 
-	if (!feedPromise.msg) {
-		$scope.activities = feedPromise.data;
-	}
+	$scope.loading = true;
+	$scope.activities = [];
+	channelService.getAllActivities().then(function(res) {
+		$scope.activities = res.data.activities;
+		$scope.loading = false;
+	});
 
+	$scope.channels = [];
 	if (userAuth.getUser().channels) {
 		channelService.setChannels();
 	}
 
-	$scope.loading = false;
+	$scope.refreshing = false
 	$scope.refresh = function() {
-		$scope.loading = !$scope.loading;
+		$scope.refreshing = !$scope.refreshing;
 	}
 
 }]);
 
 // Controller for the favorites page
-app.controller("FavCtrl", ["$scope", "userAuth", "channelService", "favsPromise", function($scope, userAuth, channelService, favsPromise) {
+app.controller("FavCtrl", ["$scope", "userAuth", "channelService", function($scope, userAuth, channelService) {
 
 	// Get array of all favorites
-	$scope.channels = favsPromise.data.favorites;
+	$scope.loading = true;
+	$scope.channels = [];
+	channelService.getFavorites().then(function(res) {
+		$scope.channels = res.data.favorites;
+		$scope.loading = false;
+	});
 
 	// Handles favoriting/unvfavoriting a channel
 	// Can only have 10 favorites at a time
@@ -326,10 +322,18 @@ app.controller("FavCtrl", ["$scope", "userAuth", "channelService", "favsPromise"
 }]);
 
 // Controller for the channel list page
-app.controller("ChannelsCtrl", ["$scope", "userAuth", "channelService", "$uibModal", "channelPromise",  function($scope, userAuth, channelService, $uibModal, channelPromise) {
+app.controller("ChannelsCtrl", ["$scope", "userAuth", "channelService", "$uibModal", function($scope, userAuth, channelService, $uibModal) {
+
+	$scope.loading = true;
+	$scope.channels = [];
+	channelService.getChannels().then(function(res) {
+		$scope.channels = res.data.channels;
+		$scope.loading = false;
+		channelService.setChannels(res.data.channels);
+	})
 
 	// Gets array of all channels
-	$scope.channels = channelPromise.data.channels;
+	$scope.channels = channelService.getChannels();
 
 	// Handles favoriting/unvfavoriting a channel
 	// Can only have 12 favorites at a time
@@ -373,9 +377,9 @@ app.controller("ModalCtrl", ["$scope", "$uibModalInstance", "channel", function(
 }]);
 
 // Controller for the categories page
-app.controller("CategoriesCtrl", ["$scope", "userAuth", "channelService", function($scope, userAuth, channelService) {
+app.controller("CategoriesCtrl", ["$scope", "userAuth", "channelService", "tagsPromise", function($scope, userAuth, channelService, tagsPromise) {
 
-	$scope.categories = channelService.getCategories();
+	$scope.categories = tagsPromise.data.tags;
 
 	// Handles favoriting/unvfavoriting a channel
 	// Can only have 12 favorites at a time

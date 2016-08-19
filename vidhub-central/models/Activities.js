@@ -5,6 +5,7 @@ var mongoose = require("mongoose");
 var ActivitySchema = new mongoose.Schema({
 	name: String,
 	date: Date,
+	user: String,
 	channelName: String,
 	channelID: {
 		type: mongoose.Schema.Types.ObjectId,

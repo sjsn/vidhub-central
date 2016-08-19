@@ -3,6 +3,7 @@ var mongoose = require("mongoose");
 
 // The tags model
 var TagSchema = new mongoose.Schema({
+	user: String,
 	name: String,
 	channels: [{
 		type: mongoose.Schema.Types.ObjectId, 

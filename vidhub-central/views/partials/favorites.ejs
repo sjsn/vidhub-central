@@ -4,38 +4,43 @@
 			<h2><i class="fa fa-heart fav no-point" aria-hidden="true"></i> My Favorites</h2>
 			<hr />
 			<section role="region" class="fav-holder">
-				<div class="col-xs-12 col-sm-6 col-md-4 col-lg-4 fav-card" ng-repeat="channel in channels | orderBy: 'name'" ng-show="channels.length">
-					<span class="fav-button" ng-click="favorite(channel)" aria-label="Delete Favorite"><i class="fa fa-times fav" aria-hidden="true"></i></span>
-					<h3>{{channel.name}}</h3>
-					<p>
-						<span ng-repeat="tag in channel.tags | orderBy: '-tag'">
-							<span ui-sref="categories" ng-click="tagClick(tag)" class="fav-tag-link">{{tag}}</span>
-							<span ng-if="$index < channel.tags.length - 1" class="fav-tag-link">, </span>
-						</span>
-						<span uib-popover uib-popover-template="'addTag.html'" popover-trigger="outsideclick" popover-title="Edit Tags" ng-if="channel.tags.length < 10" aria-label="Edit Tags" class="edit"> <span class="fav-tag-link" ng-if="channel.tags.length == 0">(add a tag) </span><i class="fa fa-pencil" aria-hidden="true"></i></span>
-					</p>
-					<div class="activity-table" ng-show="channel.activities.length">
-						<table class="table">
-							<thead>
-								<tr>
-									<th>Activity:</th>
-									<th>Date:</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr ng-repeat="activity in channel.activities | orderBy: '-date' | unique: 'true'">
-									<td>{{activity.name}}</td>
-									<td>{{activity.date | date: 'short'}}</td>
-								</tr>
-							</tbody>
-						</table>
+				<div ng-if="channels.length && !loading">
+					<div class="col-xs-12 col-sm-6 col-md-4 col-lg-4 fav-card" ng-repeat="channel in channels | orderBy: 'name'" ng-show="channels.length">
+						<span class="fav-button" ng-click="favorite(channel)" aria-label="Delete Favorite"><i class="fa fa-times fav" aria-hidden="true"></i></span>
+						<h3>{{channel.name}}</h3>
+						<p>
+							<span ng-repeat="tag in channel.tags | orderBy: '-tag'">
+								<span ui-sref="categories" ng-click="tagClick(tag)" class="fav-tag-link">{{tag}}</span>
+								<span ng-if="$index < channel.tags.length - 1" class="fav-tag-link">, </span>
+							</span>
+							<span uib-popover uib-popover-template="'addTag.html'" popover-trigger="outsideclick" popover-title="Edit Tags" ng-if="channel.tags.length < 10" aria-label="Edit Tags" class="edit"> <span class="fav-tag-link" ng-if="channel.tags.length == 0">(add a tag) </span><i class="fa fa-pencil" aria-hidden="true"></i></span>
+						</p>
+						<div class="activity-table" ng-show="channel.activities.length">
+							<table class="table">
+								<thead>
+									<tr>
+										<th>Activity:</th>
+										<th>Date:</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr ng-repeat="activity in channel.activities | orderBy: '-date' | unique: 'true'">
+										<td>{{activity.name}}</td>
+										<td>{{activity.date | date: 'short'}}</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<div ng-hide="channel.activities.length" class="no-act-msg">
+							<p>No recent activity</p>
+						</div>
 					</div>
-					<div ng-hide="channel.activities.length" class="no-act-msg">
-						<p>No recent activity</p>
-					</div>
-				</div>				
-				<div ng-hide="channels.length">
+				</div>
+				<div ng-if="!channels.length && !loading">
 					<p class="no-content">You currently have no favorites. <a ui-sref="channels">Click here to add some.</a></p>
+				</div>
+				<div ng-if="loading" class="loading-container">
+					<p class="loading-icon"><i class="fa fa-spinner loading" aria-hidden="true"></i></p>
 				</div>
 			</section>
 		</div>

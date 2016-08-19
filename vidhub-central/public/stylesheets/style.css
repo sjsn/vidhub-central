@@ -229,3 +229,13 @@ main {
 		transform:rotate(360deg);
 	}
 }
+
+.loading-icon {
+	font-size: 5rem;
+}
+
+.loading-container {
+	text-align: center;
+	width: 100%;
+	height: 100%;
+}
