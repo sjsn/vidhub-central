@@ -4,47 +4,52 @@
 		<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
 			<h2><i class="fa fa-list-ul" aria-hidden="true"></i> All Channels</h2>
 			<hr />
+			<div ng-show="channels.length">
+				<section role="region">
+					<div class="search input-group">
+						<input class="form-control" type="text" name="search" ng-model="searchTerm" placeholder="Search...">
+						<span class="input-group-addon"><i class="fa fa-search" aria-hidden="true"></i></span>
+					</div>
+				</section>
 
-			<section role="region">
-				<div class="search input-group">
-					<input class="form-control" type="text" name="search" ng-model="searchTerm" placeholder="Search...">
-					<span class="input-group-addon"><i class="fa fa-search" aria-hidden="true"></i></span>
-				</div>
-			</section>
-
-			<section role="region">
-				<table class="table table-striped">
-					<thead>
-						<tr>
-							<th>Channel Name</th>
-							<th>Subscriber Count</th>
-							<th>Video Service</th>
-							<th>Tags</th>
-							<th>Favorite</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr ng-repeat="channel in channels | orderBy: '-subscribers' | filter: searchTerm">
-							<td ng-click="openModal(channel)" class="clickable-row">{{channel.name}}</td>
-							<td ng-click="openModal(channel)" class="clickable-row">{{channel.subscribers}}</td>
-							<td ng-click="openModal(channel)" class="clickable-row">{{channel.type}}</td>
-							<td>
-								<span ng-repeat="tag in channel.tags| orderBy: '-tag'">
-									<span ui-sref="categories" ng-click="tagClick(tag)" class="tag-link">{{tag}}</span>
-									<span ng-if="$index < channel.tags.length - 1" class="tag-link">, </span>
-								</span> 
-								<span uib-popover uib-popover-template="'addTag.html'" popover-trigger="outsideclick" popover-title="Edit Tags" ng-if="channel.tags.length < 10" aria-label="Edit Tags" class="edit"> <span class="tag-link" ng-if="channel.tags.length == 0">(add a tag) </span><i class="fa fa-pencil" aria-hidden="true"></i></span>
-							</td>
-							<td>
-								<span class="fav" ng-click="favorite(channel)"><i class="fa fa-heart-o heart" aria-hidden="true" ng-hide="channel.favorite"></i><i class="fa fa-heart heart" aria-hidden="true" ng-show="channel.favorite"></i></span>
-							</td>
-						</tr>
-					</tbody>
-				</table>
-			</section>
+				<section role="region">
+					<table class="table table-striped">
+						<thead>
+							<tr>
+								<th>Channel Name</th>
+								<th>Acitivity Count</th>
+								<th>Video Service</th>
+								<th>Tags</th>
+								<th>Favorite</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr ng-repeat="channel in channels | orderBy: 'name' | filter: searchTerm">
+								<td ng-click="openModal(channel)" class="clickable-row">{{channel.name}}</td>
+								<td ng-click="openModal(channel)" class="clickable-row">{{channel.activities.length}}
+								<td ng-click="openModal(channel)" class="clickable-row">{{channel.type}}</td>
+								<td>
+									<span ng-repeat="tag in channel.tags| orderBy: '-tag'">
+										<span ui-sref="categories" ng-click="tagClick(tag)" class="tag-link">{{tag}}</span>
+										<span ng-if="$index < channel.tags.length - 1" class="tag-link">, </span>
+									</span> 
+									<span uib-popover uib-popover-template="'addTag.html'" popover-trigger="outsideclick" popover-title="Edit Tags" ng-if="channel.tags.length < 10" aria-label="Edit Tags" class="edit"> <span class="tag-link" ng-if="channel.tags.length == 0">(add a tag) </span><i class="fa fa-pencil" aria-hidden="true"></i></span>
+								</td>
+								<td>
+									<span class="fav" ng-click="favorite(channel)"><i class="fa fa-heart-o heart" aria-hidden="true" ng-hide="channel.favorite"></i><i class="fa fa-heart heart" aria-hidden="true" ng-show="channel.favorite"></i></span>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</section>
+			</div>
+			<div ng-hide="channels.length" class="empty-msg">
+				<p class="no-content">You have no channels. Either ensure your account is linked or subscribe to more channels on YouTube and Twitch!</p>
+				<p><a ui-sref="account">Click here to link an account.</a></p>
+			</div>
 		</div>
-	</main>
-</section>
+	</section>
+</main>
 
 <script type="text/ng-template" id="addTag.html">
 	<div class="popover-content">

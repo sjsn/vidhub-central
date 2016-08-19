@@ -7,9 +7,9 @@
 			</tr>
 		</thead>
 		<tbody>
-			<tr ng-repeat="activity in activities | orderBy: '-date'">
+			<tr ng-repeat="activity in activities | orderBy: '-date' | unique:'name'">
 				<td>{{activity.name}}</td>
-				<td>{{activity.date}}</td>
+				<td >{{activity.date | date: 'short'}}</td>
 			</tr>
 		</tbody>
 	</table>

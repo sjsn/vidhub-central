@@ -9,6 +9,7 @@
 				<hr class="login-hr" />
 				<p class="inv-error" ng-if="noAccount">Incorrect account information. Please try again.</p>
 				<p class="inv-error" ng-if="invalidCred">Form must not be blank. Please try again.</p>
+				<p class="verified" ng-if="actCreatedMsg">Account created successfully. Please login to continue.</p>
 				<div class="form-group">
 					<form ng-submit="login()" name="loginForm">
 						<label for="username">Username:</label>

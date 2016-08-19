@@ -199,14 +199,14 @@ main {
 	margin-left: 30px;
 }
 
-.act-btns {
-	margin-top: 50px;
-}
-
 .verified {
 	color: #009900;
 }
 
 .not-verified {
 	color: red;
+}
+
+.empty-msg {
+	text-align: center;
 }

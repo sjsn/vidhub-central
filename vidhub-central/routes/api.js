@@ -5,7 +5,7 @@ var passport = require("passport");
 var mongoose = require("mongoose");
 var User = mongoose.model("User");
 var Channel = mongoose.model("Channel");
-var Tag = mongoose.model("Tag");
+var Tags = mongoose.model("Tag");
 var Activity = mongoose.model("Activity");
 var secret = require("../api_config/secret");
 // External API configuration
@@ -17,6 +17,15 @@ var util = require("util");
 /*****************
 * Authentication *
 *****************/
+
+// Authenticatoin middleware to ensure a user is logged in before viewing routes
+function isAuthenticated(req, res, next) {
+	if (req.session.passport) {
+		return next();
+	} else {
+		res.status(401).json("401 Error. Unauthorized. Please log in to continue");
+	}
+}
 
 // POST a login attempt
 router.post("/api/login", passport.authenticate("login", 
@@ -37,7 +46,10 @@ router.post("/api/login", passport.authenticate("login",
 // GET a user if they are logged in based on session
 router.get("/api/login", function(req, res) {
 	if (req.session.passport) {
-		User.findOne({_id: req.session.passport.user}, function(err, user) {
+		User.findOne({_id: req.session.passport.user}, function(err, user, message) {
+			if (message) {
+				console.log(message);
+			}
 			if (err) {
 				res.status(400).json({
 					msg: err
@@ -59,7 +71,7 @@ router.get("/api/login", function(req, res) {
 
 // POST a new user account
 router.post("/api/users/", function(req, res) {
-	User.findOne({username: req.query.username}, function(err, user) {
+	User.findOne({username: req.body.username}, function(err, user) {
 		//	If any errors are present
 		if (err) {
 			console.log("Error signing up: " + err);
@@ -68,63 +80,67 @@ router.post("/api/users/", function(req, res) {
 		// If the user already exists
 		if (user) {
 			console.log("User already exists");
-			res.status(401).json({
+			res.status(400).json({
 				msg: "User already exists"
 			});
 		// If everything is ok and user can be created
 		} else {
-			console.log("Registering user: " + req.query.username);
+			console.log("Registering user: " + req.body.username);
 			var user = new User();
-			user.username = req.query.username;
-			user.firstName = req.query.fName;
-			user.lastName = req.query.lName;
+			user.username = req.body.username;
+			user.firstName = req.body.fName;
+			user.lastName = req.body.lName;
 			// Encrypts the password for safety
-			user.setPassword(req.query.password);
+			user.setPassword(req.body.password);
 			user.save(function(err) {
 				if (err) {
-					res.status(400).json({
-						msg: err
-					});
+					console.log(err);
 				}
 			});
-			res.user = user;
-			res.status(200);
+			res.status(200).json(user);
 		}
-	});s
+	});
+});
 
+// Middleware function to get the current user given a user ID
+router.param("userID", function(req, res, next, id) {
+	User.findOne({_id: id}, function(err, user) {
+		if (err) {
+			console.log(err);
+		} else if (user) {
+			res.user = user;
+			return next();	
+		} else {
+			console.log("No user found");
+		}
+		
+	});
 });
 
 // POST usernames for the users service
-router.post("/api/users/addusername", function(req, res) {
+router.post("/api/users/:userID/addusername", isAuthenticated, function(req, res) {
 	if (req.session.passport.user) {
-		User.findOne({_id: req.session.passport.user}, function(err, user) {
-			// Error handling
-			if (err) {
-				console.log("Error adding username" + err);
-				res.status(400).json(err);
-			}
-			if (!user) {
-				console.log("No user matches session.");
-				res.status(401).json({
-					msg: "No user matches session"
-				});
-			}
-			console.log("Adding username: " + req.query.username);
-			if (!req.query.service) {
-				res.status(422).json({
-					msg: "Missing required parameters"
-				})
-			}
-			if (req.query.service.toLowerCase() == "youtube") {
-				user.youtubeUsername = req.query.username;
-				user.save();
-			} else if (req.query.service.toLowerCase() == "twitch") {
-				user.twitchUsername = req.query.username;
-				user.save();
-			}
-			res.user = user;
-			res.status(200);
-		});
+		var user = res.user;
+		if (!user) {
+			console.log("No user matches session.");
+			res.status(401).json({
+				msg: "No user matches session"
+			});
+		}
+		console.log("Adding username: " + req.body.username);
+		if (!req.body.service) {
+			res.status(422).json({
+				msg: "Missing required parameters"
+			})
+		}
+		if (req.body.service.toLowerCase() == "youtube") {
+			user.youtubeUsername = req.body.username;
+			user.save();
+		} else if (req.body.service.toLowerCase() == "twitch") {
+			user.twitchUsername = req.body.username;
+			user.save();
+		}
+		res.status(200).json(user);
 	} else {
 		res.status(401).json({msg: "Not signed in"});
 	}
@@ -135,7 +151,6 @@ router.get("/api/logout", function(req, res) {
 	console.log("Logging out.");
 	req.logout();
 	req.session.destroy();
-	console.log(req.session);
 	res.status(200);
 });
 
@@ -193,6 +208,7 @@ function getYTActivitiesRecursive(channel, stackSize, index, callback) {
 	YouTube.activities.list({
 		part: "snippet",
 		channelId: id,
+		maxResults: 50,
 		publishedAfter: beforeDate
 	}, function(err, data) {
 		if (err) {
@@ -206,7 +222,8 @@ function getYTActivitiesRecursive(channel, stackSize, index, callback) {
 				activity = activity.snippet;
 				newAct.name = activity.title;
 				newAct.date = activity.publishedAt;
-				newAct.channel = channel;
+				newAct.channelName = channel.name;
+				newAct.channelID = channel._id;
 				newAct.save();
 				channel.activities.push(newAct);
 				index++;
@@ -219,7 +236,7 @@ function getYTActivitiesRecursive(channel, stackSize, index, callback) {
 }
 
 // Helper function to save the channels and update the user in the db
-function saveChannels(channels, user) {
+function saveChannels(channels, user, done) {
 	for (var i = 0; i < channels.length; i++) {
 		channels[i].user = user;
 		channels[i].save(function(err, channel) {
@@ -229,12 +246,16 @@ function saveChannels(channels, user) {
 		});
 		user.channels.push(channels[i]);
 	}
-	user.save();
-	return user;
+	user.save(function(err, user) {
+		if (err) {
+			console.log(err);
+		}
+		done(user);
+	});
 }
 
 // GET the youtube authorization information and relevent channel data
-router.get("/api/auth/youtube", passport.authenticate("youtube"),
+router.get("/api/auth/youtube", isAuthenticated, passport.authenticate("youtube"),
 	function(req, res) {
 		if (req.error) {
 			console.log(req.error);
@@ -249,16 +270,13 @@ router.get("/api/auth/youtube", passport.authenticate("youtube"),
 		var channels = [];
 		// Gets all channels that the user is subscribed to
 		getYTSubsRecursive(null, [], 0, 0, function(userChannels) {
-			channels = userChannels;
-			console.log("Last Channels (Needs to be below 'M' to pass): " + channels[channels.length - 1]);
-			var user = req.user;
 			// Adds all channels to the database
-			if (channels) {
-				user = saveChannels(channels, user);
+			if (userChannels) {
+				saveChannels(userChannels, req.user, function(user) {
+					res.user = user;
+					res.status(200).json(user);
+				});
 			}
-			console.log("User: " + user);
-			res.user = user;
-			res.status(200);
 		});
 	}
 );
@@ -272,7 +290,6 @@ function getTWChannels(Twitch, twitchAccess, user) {
 		var channel = new Channel();
 		channel.name = curChannel.display_name;
 		channel.channelID = curChannel._id;
-		channel.subscribers = curChannel.followers;
 		channel.type = "Twitch";
 		channels.push(channel);
 	}
@@ -327,7 +344,7 @@ function getTWActs(Twitch, twitchAccess, channels) {
 }
 
 // GET the Twitch authorization information and relevent channel data
-router.get("/api/auth/twitch", passport.authenticate("twitch"),
+router.get("/api/auth/twitch", isAuthenticated, passport.authenticate("twitch"),
 	function(req, res) {
 		if (req.error) {
 			console.log(req.error);
@@ -355,27 +372,61 @@ router.get("/api/auth/twitch", passport.authenticate("twitch"),
 	}
 );
 
-/*******************
-* User Information *
-*******************/
-
-
 /***********
 * Channels *
 ***********/
 
+// channels.forEach(function(channel) {
+// 					var completeChannel = {};
+// 					if (channel.tags.length) {
+// 						channel.tags.forEach(function(tagID) {
+// 							Tags.findOne({_id: tagID}, function(err, tag) {
+// 								completeChannel.tags.push(tag.name);
+// 							});
+// 						});
+// 					}
+// 					console.log(completeChannel);
+// 					completeChannels.push(completeChannel);
+// 				});
+
+// // Helper function to recursively get all of the channels and their tag names
+// function getChannelsRecursive(channels, stackSize, index, processed, callback) {
+// 	if (index == stackSize) {
+// 		callback(processed);
+// 	}
+// 	var channel = channels[i];
+// 	channel._id = channels[i]._id;
+// 	channel.name = channels[i].name;
+// 	channel.type = channels[i].type;
+// 	channel.tags = [];
+// 	channel.activities = channels[i].activities;
+// 	channel.user = channels[i].user;
+// 	if (channels[i].tags.length) {
+// 		getTagsRecursive(channel, channels[i].tags, 0, 0, [], function(tags) {
+// 			channel.tags = tags;
+// 			processed.push(channel);
+// 			getChannelsRecursive(channels, stackSize, index++, processed, callback);
+// 		});
+// 	}
+// }
+
+// // Helper function to get all of a channels tag names
+// function getTagsRecursive(channel, tags, stackSize, index, processed, callback) {
+
+// }
+
 // GET a list of the profiles channels
-router.get("/api/channels", function(req, res) {
-	if (req.session.passport) {
-		User.findOne({_id: req.session.passport.user}, function(err, user) {
-			Channel.find({user: user._id}, function(err, channels) {
-				res.channels = channels;
-				res.status(200).json({channels: channels});
-			});
+router.get("/api/channels", isAuthenticated, function(req, res) {
+	User.findOne({_id: req.session.passport.user}, function(err, user) {
+		Channel.find({user: user._id}, function(err, channels) {
+			// getChannelsRecursive(channels, channels.length, 0, [], function(proccessed) {
+			// 	channels = processed;
+			// 	res.channels = channels;
+			// 	res.status(200).json({channels: channels});
+			// }
+			res.status(200).json(channels);
 		});
-	} else {
-		res.status(401).json({msg: Unauthorized});
-	}
+	});
 });
 
 // Middleware to get the current channel given a channel id
@@ -387,19 +438,88 @@ router.param("channelID", function(req, res, next, id) {
 });
 
 // GET a list of a channels activities
-router.get("/api/channels/:channelID/activities", function(req, res) {
-	Activity.find({channel: res.channel._id}, function(err, activities) {
-		if (err) {
-			console.log(err);
-		}
-		res.activities = activities;
-		res.status(200).json({activities: activities});
-	});
+router.get("/api/channels/:channelID/activities", isAuthenticated, function(req, res) {
+	if (req.session.passport) {
+		Activity.find({channelID: res.channel._id}, function(err, activities) {
+			if (err) {
+				console.log(err);
+			}
+			res.activities = activities;
+			res.status(200).json({activities: activities});
+		});
+	} else {
+		res.status(401).json("Unauthorized. Please log in to continue");
+	}
 });
 
 // GET a list of ALL recent activity
-router.get("/api/activities", function(req, res) {
-	// Recursively get all channel activity
+router.get("/api/activities", isAuthenticated, function(req, res) {
+	Activity.find().then(function(activities) {
+		if (activities) {
+			res.status(200).json(activities);
+		} else {
+			res.status(200).json({msg: "No activities found"});
+		}
+	});
+});
+
+// POST a favorite update
+router.post("/api/channels/:channelID/favorite", isAuthenticated, function(req, res) {
+	res.channel.updateFavorite(function(err, channel) {
+		if (err) {
+			console.log(err);
+		}
+		res.status(200).json(channel);
+	}); 
+});
+
+// POST a new tag to a channel
+router.post("/api/channels/:channelID/tags", isAuthenticated, function(req, res) {
+	var channel = res.channel;
+	Tags.findOne({name: req.body.tag}, function(err, tag) {
+		if (err) {
+			console.log(err);
+		}
+		var newTag;
+		if (!tag) {
+			newTag = new Tags();
+			newTag.name = req.body.tag;
+			newTag.channels.push(channel);
+		} else {
+			newTag = tag;
+			newTag.channels.push(channel);
+		}
+		newTag.save();
+		channel.tags.push(newTag);
+		channel.save(function(err, channel) {
+		if (err) {
+			console.log(err);
+		}
+		res.status(200).json(channel);
+		});
+	});
+});
+
+// DELETE a tag from a channel
+router.delete("/api/channels/:channelID/tags", isAuthenticated, function(req, res) {
+	var channel = res.channel;
+	var tag = req.body.tag;
+	for (var i = 0; i < channel.tags.length; i++) {
+		if (channel.tags[i] == tag._id) {
+			channel.tags[i].pop();
+			channel.save();
+		}
+	}
+	Tags.findOne({name: req.tag}, function(err, tag) {
+		if (err) {
+			console.log(err);
+		}
+		tag.remove(function(err) {
+			if (err) {
+				console.log(err);
+			}
+		});
+	});
 });
 
 module.exports = router;

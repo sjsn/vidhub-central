@@ -7,7 +7,6 @@ var ChannelSchema = new mongoose.Schema({
 	channelID: String,
 	type: String,
 	favorite: {type: Boolean, default: false},
-	subscribers: Number,
 	tags: [{
 		type: mongoose.Schema.Types.ObjectId, 
 		ref: "Tag"
@@ -31,6 +30,12 @@ ChannelSchema.methods.updateFavorite = function(cb) {
 // Handles updating channel subscriber information
 ChannelSchema.methods.updateSubs = function(newCount, cb) {
 	this.subscribers = newCount;
+	this.save(cb);
+};
+
+// Handles adding a new tag to the channel
+ChannelSchema.methods.addTag = function(tag, cb) {
+	this.tags.push(tag);
 	this.save(cb);
 };
 

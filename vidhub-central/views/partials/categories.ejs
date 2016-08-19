@@ -2,44 +2,49 @@
 	<section role="region">
 		<h2><i class="fa fa-folder-open-o" aria-hidden="true"></i> My Categories</h2>
 		<hr />
-		<section role="region">
-			<div class="search input-group">
-				<input class="form-control" type="text" name="search" ng-model="searchTerm" placeholder="Search...">
-				<span class="input-group-addon"><i class="fa fa-search" aria-hidden="true"></i></span>
-			</div>
-		</section>
-		<uib-accordion close-others="false">
-			<div uib-accordion-group ng-repeat="category in categories | filter: '#' + searchTerm" class="panel-default">
-				<uib-accordion-heading>
-					{{category.name}}
-				</uib-accordion-heading>
-				<h3 class="cat-heading">Channels: </h3>
-				<div uib-accordion-group ng-repeat="channel in category.channels" class="panel-default">
-					<uib-accordion-heading>
-						{{channel.name}}
-					</uib-accordion-heading>
-					<p>Favorite: 
-						<span class="fav" ng-click="favorite(channel)">
-							<i class="fa fa-heart-o heart" aria-hidden="true" ng-hide="channel.favorite"></i>
-							<i class="fa fa-heart heart" aria-hidden="true" ng-show="channel.favorite"></i>
-						</span>
-					</p>
-					<table class="table">
-						<thead ng-if="channel.activities.length > 0">
-							<tr>
-								<th>Activity</th><th>Date</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr ng-repeat="activity in channel.activities | orderBy: '-date'">
-								<td>{{activity.name}}</td>
-								<td>{{activity.date}}</td>
-							</tr>
-						</tbody>
-					</table>
-					<p ng-if="!channel.activities.length">No recent activity</p>
+		<div ng-show="areCats()">
+			<section role="region">
+				<div class="search input-group">
+					<input class="form-control" type="text" name="search" ng-model="searchTerm" placeholder="Search...">
+					<span class="input-group-addon"><i class="fa fa-search" aria-hidden="true"></i></span>
 				</div>
-			</div>
-		</uib-accordion>
+			</section>
+			<uib-accordion close-others="false">
+				<div uib-accordion-group ng-repeat="category in categories | filter: '#' + searchTerm" class="panel-default">
+					<uib-accordion-heading>
+						{{category.name}}
+					</uib-accordion-heading>
+					<h3 class="cat-heading">Channels: </h3>
+					<div uib-accordion-group ng-repeat="channel in category.channels" class="panel-default">
+						<uib-accordion-heading>
+							{{channel.name}}
+						</uib-accordion-heading>
+						<p>Favorite: 
+							<span class="fav" ng-click="favorite(channel)">
+								<i class="fa fa-heart-o heart" aria-hidden="true" ng-hide="channel.favorite"></i>
+								<i class="fa fa-heart heart" aria-hidden="true" ng-show="channel.favorite"></i>
+							</span>
+						</p>
+						<table class="table">
+							<thead ng-if="channel.activities.length > 0">
+								<tr>
+									<th>Activity</th><th>Date</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr ng-repeat="activity in channel.activities | orderBy: '-date'">
+									<td>{{activity.name}}</td>
+									<td>{{activity.date}}</td>
+								</tr>
+							</tbody>
+						</table>
+						<p ng-if="!channel.activities.length">No recent activity</p>
+					</div>
+				</div>
+			</uib-accordion>
+		</div>
+		<div ng-hide="areCats()" class="empty-msg">
+			<p class="no-content">You currently have no categories. <a ui-sref="channels">Click here to add some.</a></p>
+		</div>
 	</section>
 </main>

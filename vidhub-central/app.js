@@ -13,6 +13,21 @@ var secret = require("./api_config/secret");
 var app = express();
 var flash = require("connect-flash");
 app.use(flash());
+// Rate Limiter
+var RateLimit = require('express-rate-limit');
+// Limiter for API
+var apiLimiter = new RateLimit({
+  windowMs: 60 * 1000, // Refresh count every limit
+  max: 50, // Allow a maiximum of 50 requests every minute without delay
+  delayMs: 0 // Limit happens instantly
+});
+// Limiter for front-end site
+var siteLimiter = new RateLimit({
+  windowMs: 60 * 1000, // Refresh count every limit
+  max: 100, // Allow a maiximum of 100 requests every minute without delay
+  delayMs: 0 // Limit happens instantly
+});
+
 // Mongoose setup
 var mongoose = require("mongoose");
 // Import models
@@ -62,9 +77,9 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Main app endpoint (front-end of app)
-app.use('/', routes);
+app.use('/', siteLimiter, routes);
 // API endpoints
-app.use("/", apiRoutes);
+app.use("/", apiLimiter, apiRoutes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

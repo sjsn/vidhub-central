@@ -4,10 +4,10 @@ var mongoose = require("mongoose");
 // The tags model
 var TagSchema = new mongoose.Schema({
 	name: String,
-	channel: {
+	channels: [{
 		type: mongoose.Schema.Types.ObjectId, 
 		ref: "Channel"
-	}
+	}]
 });
 
 // Binds the model to the schema

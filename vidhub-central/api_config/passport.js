@@ -16,7 +16,8 @@ passport.use("login", new LocalStrategy({
 	}, function(req, username, password, done) {
 			User.findOne({username: username}, function(err, user) {
 				if (err) {
-					return done(err, null);
+					console.log("Error");
+					return done(err, null, null);
 				}
 				// Returns if the user with that username wasn't found in the database
 				if (!user) {
@@ -31,7 +32,7 @@ passport.use("login", new LocalStrategy({
 					});
 				}
 				// If everything matched, return the user object
-				return done(null, user);
+				return done(null, user, null);
 			});
 		}
 	)

@@ -5,8 +5,9 @@ var mongoose = require("mongoose");
 var ActivitySchema = new mongoose.Schema({
 	name: String,
 	date: Date,
-	channel: {
-		type: mongoose.Schema.Types.ObjectId, 
+	channelName: String,
+	channelID: {
+		type: mongoose.Schema.Types.ObjectId,
 		ref: "Channel"
 	}
 });

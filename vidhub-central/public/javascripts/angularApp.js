@@ -1,7 +1,7 @@
 "use strict";
 
 // Initiates the angular app
-var app = angular.module("VidHub", ["ui.router", "ui.bootstrap", "ngAnimate"]);
+var app = angular.module("VidHub", ["ui.router", "ui.bootstrap", "ngAnimate", "angular.filter"]);
 
 // Page router
 app.config(["$stateProvider", "$urlRouterProvider", 
@@ -25,14 +25,21 @@ app.config(["$stateProvider", "$urlRouterProvider",
 			"feed", {
 				url: "/feed",
 				templateUrl: "./partials/feed.ejs",
-				controller: "FeedCtrl"
+				controller: "FeedCtrl",
+				resolve: {
+					"feedPromise": [
+						"channelService" , function(channelService) {
+							return channelService.getAllActivities();
+						}
+					]
+				}
 			}
 		)
 		.state(
 			"favorites", {
 				url: "/favorites",
 				templateUrl: "./partials/favorites.ejs",
-				controller: "FavCtrl"
+				controller: "FavCtrl",
 			}
 		).state(
 			"channels", {
@@ -65,15 +72,12 @@ app.factory("userAuth", ["$http", "$window", function($http, $window){
 
 	return {
 		checkLogin: function() {
-			return $http({
-				url: "/api/login",
-				method: "GET",
-			}).then(function(res) {
+			return $http.get("/api/login").then(function(res) {
 				if (res.data) {
 					data = res.data;
 				}
 			}, function(err) {
-				//console.log(err);
+				console.log(err);
 			});
 		},
 		isLoggedIn: function() {
@@ -83,14 +87,11 @@ app.factory("userAuth", ["$http", "$window", function($http, $window){
 			return $http({
 				url: "/api/login/",
 				method: "POST",
-				params: {username: username, password: password}
+				data: {username: username, password: password}
 			});
 		},
 		logout: function() {
-			$http({
-				url: "/api/logout", 
-				method: "GET"})
-			.then(function() {
+			$http.get("/api/logout").then(function() {
 				data = {};
 			});
 		},
@@ -98,7 +99,7 @@ app.factory("userAuth", ["$http", "$window", function($http, $window){
 			return $http({
 				url: "/api/users",
 				method: "POST",
-				params: {fName: fName, lName: lName, username: username, password: password}
+				data: {fName: fName, lName: lName, username: username, password: password}
 			});
 		},
 		setUser: function(user) {
@@ -107,14 +108,11 @@ app.factory("userAuth", ["$http", "$window", function($http, $window){
 		getUser: function(user) {
 			return data;
 		},
-		getYoutube: function() {
-
-		},
 		addUsername: function(username, service) {
 			return $http({
-				url: "/api/users/addusername",
+				url: "/api/users/" + data._id + "/addusername",
 				method: "POST",
-				params: {username: username, service: service}
+				data: {username: username, service: service}
 			});
 		}
 	};
@@ -132,8 +130,7 @@ app.factory("channelService", ["$http", function($http) {
 	return {
 		setChannels: function() {
 			$http.get("/api/channels").then(function(res) {
-				data = res.data.channels;
-				console.log(res.data.channels);
+				data = res.data;
 			});
 		},
 		getChannels: function() {
@@ -143,29 +140,40 @@ app.factory("channelService", ["$http", function($http) {
 			return $http.get("/api/channels/" + id + "/activities");
 		},
 		favorite: function(channel) {
-			var count = 0;
-			for (var i = 0; i < data.length; i++) {
-				if (data[i].favorite == true) {
-					count += 1;
+			$http.post("/api/channels/" + channel._id + "/favorite")
+			.then(function() {
+				var count = 0;
+				for (var i = 0; i < data.length; i++) {
+					if (data[i].favorite == true) {
+						count += 1;
+					}
+				};
+				var index = getChannelIndex(channel);
+				if (count <= 11 || data[index].favorite) {
+					data[index].favorite = !data[index].favorite;
+				} else {
+					console.log("Too many favorites");
 				}
-			};
-			var index = getChannelIndex(channel);
-			if (count <= 11 || data[index].favorite) {
-				data[index].favorite = !data[index].favorite;
-			} else {
-				console.log("Too many favorites");
-			}
+			});
 		},
 		addTag: function(channel, tag) {
 			if (tag) {
-				var index = getChannelIndex(channel);
+				// Formats tag to keep them all uniform
 				if (tag.charAt(0) == "#") {
 					tag.splice(1);
 				}
 				tag = tag.split(" ");
 				tag = tag.join("");
-				data[index].tags.push("#" + tag.toLowerCase());
-				data.newTag = "";
+				tag = "#" + tag.toLowerCase();
+				$http({
+					url: "/api/channels/" + channel._id + "/tags",
+					method: "POST",
+					data: {tag: tag}
+				}).then(function() {
+					var index = getChannelIndex(channel);
+					data[index].tags.push(tag);
+					data.newTag = "";
+				});
 			}
 		},
 		deleteTag: function(channel, tag) {
@@ -178,7 +186,7 @@ app.factory("channelService", ["$http", function($http) {
 			_.each(data, function(channel) {
 				_.each(channel.tags, function(tag) {
 					var index = _.findIndex(categories, function(category) {
-						return category.name == "" + tag;
+						return category.name == tag;
 					});
 					if (index == -1) {
 						categories.push({name: tag, channels: [channel]})
@@ -219,7 +227,6 @@ app.controller("FormCtrl", ["$scope", "channelService", "userAuth", "$http", "lo
 		return userAuth.isLoggedIn();
 	};
 
-
 	$scope.toggleLogin = true;
 
 	$scope.login = function() {
@@ -228,7 +235,6 @@ app.controller("FormCtrl", ["$scope", "channelService", "userAuth", "$http", "lo
 		if (username && password) {
 			userAuth.login($scope.username, $scope.pass).then(function(res) {
 				var user = res.data;
-				console.log(user);
 				if (user.username) {
 					userAuth.setUser(user);
 				} else {
@@ -245,10 +251,10 @@ app.controller("FormCtrl", ["$scope", "channelService", "userAuth", "$http", "lo
 		$scope.invalidCred = true;
 		if ($scope.fName && $scope.lName && $scope.username && $scope.pass && ($scope.pass == $scope.confpass)) {
 			userAuth.register($scope.fName, $scope.lName, $scope.username, $scope.pass).then(function(res) {
-				console.log(res.user);
-				if (res.user) {
-					userAuth.setUser(res.user);
-					$scope.isSignedIn = true;
+				if (res.data) {
+					$scope.toggleLogin = true;
+					$scope.actCreatedMsg = true;
+					$scope.invalidCred = false;
 				} else {
 					$scope.taken = true;
 				}
@@ -261,14 +267,15 @@ app.controller("FormCtrl", ["$scope", "channelService", "userAuth", "$http", "lo
 }]);
 
 // Controller for the home feed
-app.controller("FeedCtrl", ["$scope", "channelService", function($scope, channelService) {
+app.controller("FeedCtrl", ["$scope", "channelService", "userAuth", "feedPromise", function($scope, channelService, userAuth, feedPromise) {
 
-	channelService.getAllActivities().then(function(res) {
-		console.log(res.data);
-		$scope.activities = res.data.activities;
-	});
+	if (!feedPromise.msg) {
+		$scope.activities = feedPromise.data;
+	}
 
-	channelService.setChannels();
+	if (userAuth.getUser().channels) {
+		channelService.setChannels();
+	}
 
 }]);
 
@@ -362,6 +369,7 @@ app.controller("ModalCtrl", ["$scope", "$uibModalInstance", "channel", "activiti
 app.controller("CategoriesCtrl", ["$scope", "userAuth", "channelService", function($scope, userAuth, channelService) {
 
 	$scope.categories = channelService.getCategories();
+	console.log($scope.categories);
 
 	// Handles favoriting/unvfavoriting a channel
 	// Can only have 12 favorites at a time
@@ -376,6 +384,16 @@ app.controller("CategoriesCtrl", ["$scope", "userAuth", "channelService", functi
 		$scope.searchTerm = tag;
 	}
 
+	$scope.areCats = function() {
+		var exists = false;
+		_.each($scope.categories, function(category) {
+			if (!exists && category) {
+				exists = true;
+			}
+		});
+		return exists;
+	};
+
 }]);
 
 // Controller for the account page
@@ -389,24 +407,20 @@ app.controller("AccountCtrl", ["$scope", "userAuth", function($scope, userAuth) 
 
 	$scope.error = false;
 	$scope.addUsername = function(username, service) {
-		console.log(username);
-		console.log(service);
 		$scope.error = false;
 		if (username && service) {
 			userAuth.addUsername(username, service).then(function(res) {
-				var user = res.user;
+				var user = res.data;
 				if (!user) {
 					$scope.error = true;
 				} else {
-					console.log(user);
+					$scope.user = user;
 					userAuth.setUser(user);
 				}
 			});
 		} else {
 			$scope.error = true;
 		}
-		$scope.username = "";
-		$scope.service = null;
 	};
 
 }]);
