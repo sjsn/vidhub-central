@@ -1,13 +1,12 @@
 <main class="container" ng-show="isSignedIn()">
 	<section role="region">
 		<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-			<h2><i class="fa fa-heart fav" aria-hidden="true"></i> My Favorites</h2>
+			<h2><i class="fa fa-heart fav no-point" aria-hidden="true"></i> My Favorites</h2>
 			<hr />
 			<section role="region" class="fav-holder">
-				<div class="col-xs-12 col-sm-6 col-md-4 col-lg-4 fav-card" ng-repeat="channel in channels | orderBy: '-subscribers'" ng-show="areFavorites()" ng-if="channel.favorite">
-					<span class="fav-button" ng-click="favorite(channel)"aria-label="Delete Favorite"><i class="fa fa-times fav" aria-hidden="true"></i></span>
+				<div class="col-xs-12 col-sm-6 col-md-4 col-lg-4 fav-card" ng-repeat="channel in channels | orderBy: 'name'" ng-show="channels.length">
+					<span class="fav-button" ng-click="favorite(channel)" aria-label="Delete Favorite"><i class="fa fa-times fav" aria-hidden="true"></i></span>
 					<h3>{{channel.name}}</h3>
-					<p>{{channel.subscribers}}</p>
 					<p>
 						<span ng-repeat="tag in channel.tags | orderBy: '-tag'">
 							<span ui-sref="categories" ng-click="tagClick(tag)" class="fav-tag-link">{{tag}}</span>
@@ -24,7 +23,7 @@
 								</tr>
 							</thead>
 							<tbody>
-								<tr ng-repeat="activity in activities | orderBy: '-date' | unique: 'true'">
+								<tr ng-repeat="activity in channel.activities | orderBy: '-date' | unique: 'true'">
 									<td>{{activity.name}}</td>
 									<td>{{activity.date | date: 'short'}}</td>
 								</tr>
@@ -35,7 +34,7 @@
 						<p>No recent activity</p>
 					</div>
 				</div>				
-				<div ng-hide="areFavorites()">
+				<div ng-hide="channels.length">
 					<p class="no-content">You currently have no favorites. <a ui-sref="channels">Click here to add some.</a></p>
 				</div>
 			</section>

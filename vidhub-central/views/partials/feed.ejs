@@ -1,6 +1,6 @@
 <main class="container" ng-show="isSignedIn()">
 	<section role="region">
-		<h2><i class="fa fa-rss" aria-hidden="true"></i> Live Feed</h2>
+		<h2><i class="fa fa-rss" aria-hidden="true"></i> Live Feed<button ng-click="refresh()" class="btn btn-primary refresh-btn"><i class="fa fa-refresh" ng-class="{loading: loading}" aria-hidden="true"></i></button></h2>
 	</section>
 	<hr />
 	<section role="region">

@@ -210,3 +210,22 @@ main {
 .empty-msg {
 	text-align: center;
 }
+
+.refresh-btn {
+	float: right;
+}
+
+.no-point:hover {
+	cursor: default;
+}
+
+.loading {
+	animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+	100% {
+		-webkit-transform: rotate(360deg);
+		transform:rotate(360deg);
+	}
+}

@@ -18,13 +18,13 @@ var RateLimit = require('express-rate-limit');
 // Limiter for API
 var apiLimiter = new RateLimit({
   windowMs: 60 * 1000, // Refresh count every limit
-  max: 50, // Allow a maiximum of 50 requests every minute without delay
+  max: 50, // Allow a maiximum of 50 requests
   delayMs: 0 // Limit happens instantly
 });
 // Limiter for front-end site
 var siteLimiter = new RateLimit({
   windowMs: 60 * 1000, // Refresh count every limit
-  max: 100, // Allow a maiximum of 100 requests every minute without delay
+  max: 100, // Allow a maiximum of 100 requests
   delayMs: 0 // Limit happens instantly
 });
 

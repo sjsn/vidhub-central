@@ -40,6 +40,13 @@ app.config(["$stateProvider", "$urlRouterProvider",
 				url: "/favorites",
 				templateUrl: "./partials/favorites.ejs",
 				controller: "FavCtrl",
+				resolve: {
+					"favsPromise": [
+						"channelService", function(channelService) {
+							return channelService.getFavorites();
+						}
+					]
+				}
 			}
 		).state(
 			"channels", {
@@ -138,6 +145,9 @@ app.factory("channelService", ["$http", function($http) {
 		},
 		getActivities: function(id) {
 			return $http.get("/api/channels/" + id + "/activities");
+		},
+		getFavorites: function() {
+			return $http.get("/api/favorites");
 		},
 		favorite: function(channel) {
 			$http.post("/api/channels/" + channel._id + "/favorite")
@@ -277,22 +287,18 @@ app.controller("FeedCtrl", ["$scope", "channelService", "userAuth", "feedPromise
 		channelService.setChannels();
 	}
 
+	$scope.loading = false;
+	$scope.refresh = function() {
+		$scope.loading = !$scope.loading;
+	}
+
 }]);
 
 // Controller for the favorites page
-app.controller("FavCtrl", ["$scope", "userAuth", "channelService", function($scope, userAuth, channelService) {
+app.controller("FavCtrl", ["$scope", "userAuth", "channelService", "favsPromise", function($scope, userAuth, channelService, favsPromise) {
 
-	$scope.channels = channelService.getChannels();
-
-	$scope.areFavorites = function() {
-		var exists = false;
-		_.each($scope.channels, function(channel) {
-			if (!exists && channel.favorite) {
-				exists = true;
-			}
-		});
-		return exists;
-	};
+	console.log(favsPromise.data.favorites);
+	$scope.channels = favsPromise.data.favorites;
 
 	// Handles favoriting/unvfavoriting a channel
 	// Can only have 10 favorites at a time
