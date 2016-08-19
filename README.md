@@ -18,22 +18,22 @@ This app was developed using the MEAN stack and deployed on an AWS instance runn
 ```
 
 ### User Authorization / Account Information
-`POST /api/login` - Logs a user in
-`GET /api/login` - Gets a logged in users account information
-`GET /api/logout` - Logs a user out
-`POST /api/users/` - Adds a new user
-*`POST /api/users/[userID]/addusername` - Adds an external account username to the current account
-*`GET /api/auth/youtube` - Authorizes users YouTube account to be used with this account (redirects to YouTube)
-*`GET /api/auth/twitch` - Authorizes users Twitch.tv account to be used with this account (redirects to Twitch.tv)
+* `POST /api/login` - Logs a user in
+* `GET /api/login` - Gets a logged in users account information
+* `GET /api/logout` - Logs a user out
+* `POST /api/users/` - Adds a new user
+* *`POST /api/users/[userID]/addusername` - Adds an external account username to the current account
+* *`GET /api/auth/youtube` - Authorizes users YouTube account to be used with this account (redirects to YouTube)
+* *`GET /api/auth/twitch` - Authorizes users Twitch.tv account to be used with this account (redirects to Twitch.tv)
 
 ### Channel Information
-*`GET /api/channels` - Lists all of a users followed/subscribed channels
-*`GET /api/channels/[channelID]` - Lists a channels details
+* *`GET /api/channels` - Lists all of a users followed/subscribed channels
+* *`GET /api/channels/[channelID]` - Lists a channels details
 
 ### Tag Information
-*`GET /api/tags` - Lists all of a users tags
-*`POST /api/tags` - Adds a new tag
-*`GET /api/tags/[tagID]` - Lists all of the information pertaining to a particular tag
+* *`GET /api/tags` - Lists all of a users tags
+* *`POST /api/tags` - Adds a new tag
+* *`GET /api/tags/[tagID]` - Lists all of the information pertaining to a particular tag
 
 ### Favorites Information
-*`GET /api/favorites` - Lists all of a users favorites
+* *`GET /api/favorites` - Lists all of a users favorites
