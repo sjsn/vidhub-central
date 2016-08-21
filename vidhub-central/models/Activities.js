@@ -5,6 +5,7 @@ var mongoose = require("mongoose");
 var ActivitySchema = new mongoose.Schema({
 	name: String,
 	date: Date,
+	expireAt: Date,
 	user: String,
 	channelName: String,
 	channelID: {
@@ -12,6 +13,9 @@ var ActivitySchema = new mongoose.Schema({
 		ref: "Channel"
 	}
 });
+
+// Sets the activity to auto-expire at the expireAt date
+ActivitySchema.index({"expireAt": 1}, {expireAfterSeconds: 0});
 
 // Binds the schema to the model
 mongoose.model("Activity", ActivitySchema);

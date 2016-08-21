@@ -2,7 +2,7 @@
 	<section role="region">
 		<h2><i class="fa fa-folder-open-o" aria-hidden="true"></i> My Categories</h2>
 		<hr />
-		<div ng-show="areCats()">
+		<div ng-if="areCats() && !loading">
 			<section role="region">
 				<div class="search input-group">
 					<input class="form-control" type="text" name="search" ng-model="searchTerm" placeholder="Search...">
@@ -43,8 +43,11 @@
 				</div>
 			</uib-accordion>
 		</div>
-		<div ng-hide="areCats()" class="empty-msg">
+		<div ng-if="!areCats() && !loading" class="empty-msg">
 			<p class="no-content">You currently have no categories. <a ui-sref="channels">Click here to add some.</a></p>
+		</div>
+		<div ng-if="loading" class="loading-container">
+			<p class="loading-icon"><i class="fa fa-spinner loading" aria-hidden="true"></i></p>
 		</div>
 	</section>
 </main>

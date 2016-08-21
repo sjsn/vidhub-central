@@ -7,3 +7,5 @@ node_modules
 secret.js
 
 npm-debug.log
+
+*.zip

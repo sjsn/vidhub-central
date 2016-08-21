@@ -44,14 +44,7 @@ app.config(["$stateProvider", "$urlRouterProvider",
 			"categories", {
 				url: "/categories",
 				templateUrl: "./partials/categories.ejs",
-				controller: "CategoriesCtrl",
-				resolve: {
-					"tagsPromise": [
-						"channelService", function(channelService) {
-							return channelService.getTags();
-						}
-					]
-				}
+				controller: "CategoriesCtrl"
 			}
 		).state(
 			"account", {
@@ -143,18 +136,8 @@ app.factory("channelService", ["$http", function($http) {
 		favorite: function(channel) {
 			$http.post("/api/channels/" + channel._id + "/favorite")
 			.then(function() {
-				var count = 0;
-				for (var i = 0; i < data.length; i++) {
-					if (data[i].favorite == true) {
-						count += 1;
-					}
-				};
 				var index = getChannelIndex(channel);
-				if (count <= 11 || data[index].favorite) {
-					data[index].favorite = !data[index].favorite;
-				} else {
-					console.log("Too many favorites");
-				}
+				data[index].favorite = !data[index].favorite;
 			});
 		},
 		getTags: function() {
@@ -181,9 +164,11 @@ app.factory("channelService", ["$http", function($http) {
 			}
 		},
 		deleteTag: function(channel, tag) {
-			var index = getChannelIndex(channel);
-			var tagIndex = _.findLastIndex(data[index].tags, tag);
-			data[index].tags.splice(tagIndex, 1);
+			$http.delete("/api/tags/" + tag._id).then(function() {
+				var index = getChannelIndex(channel);
+				var tagIndex = _.findLastIndex(data[index].tags, tag);
+				data[index].tags.splice(tagIndex, 1);
+			});
 		},
 		getCategories: function() {
 			var categories = [];
@@ -204,6 +189,9 @@ app.factory("channelService", ["$http", function($http) {
 		getAllActivities: function() {
 			return $http.get("/api/activities");
 		},
+		refresh: function() {
+			return $http.get("/api/refresh");
+		}
 	};
 
 }]);
@@ -286,8 +274,17 @@ app.controller("FeedCtrl", ["$scope", "channelService", "userAuth", function($sc
 	}
 
 	$scope.refreshing = false
+	// Takes a few secoonds. Lots of promises involved
 	$scope.refresh = function() {
-		$scope.refreshing = !$scope.refreshing;
+		$scope.refreshing = true;
+		channelService.refresh().then(function(res) {
+			console.log("Refreshed");
+			channelService.getAllActivities().then(function(res) {
+				console.log("Done");
+				$scope.activities = res.data.activities;
+				$scope.resfreshing = false;
+			});
+		});
 	}
 
 }]);
@@ -299,8 +296,11 @@ app.controller("FavCtrl", ["$scope", "userAuth", "channelService", function($sco
 	$scope.loading = true;
 	$scope.channels = [];
 	channelService.getFavorites().then(function(res) {
-		$scope.channels = res.data.favorites;
-		$scope.loading = false;
+		channelService.getChannels().then(function(response) {
+			$scope.channels = res.data.favorites;
+			$scope.loading = false;
+			channelService.setChannels(response.data.channels);
+		});
 	});
 
 	// Handles favoriting/unvfavoriting a channel
@@ -330,7 +330,7 @@ app.controller("ChannelsCtrl", ["$scope", "userAuth", "channelService", "$uibMod
 		$scope.channels = res.data.channels;
 		$scope.loading = false;
 		channelService.setChannels(res.data.channels);
-	})
+	});
 
 	// Gets array of all channels
 	$scope.channels = channelService.getChannels();
@@ -377,9 +377,16 @@ app.controller("ModalCtrl", ["$scope", "$uibModalInstance", "channel", function(
 }]);
 
 // Controller for the categories page
-app.controller("CategoriesCtrl", ["$scope", "userAuth", "channelService", "tagsPromise", function($scope, userAuth, channelService, tagsPromise) {
+app.controller("CategoriesCtrl", ["$scope", "userAuth", "channelService", function($scope, userAuth, channelService) {
 
-	$scope.categories = tagsPromise.data.tags;
+	$scope.loading = true;
+	channelService.getTags().then(function(res) {
+		channelService.getChannels().then(function(response) {
+			$scope.categories = res.data.tags;
+			channelService.setChannels(response.data.channels);
+			$scope.loading = false;
+		});
+	});
 
 	// Handles favoriting/unvfavoriting a channel
 	// Can only have 12 favorites at a time

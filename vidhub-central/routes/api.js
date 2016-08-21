@@ -217,19 +217,24 @@ function getYTActivitiesRecursive(channel, stackSize, index, user, callback) {
 			stackSize = data.items.length;
 			var activities = data.items;
 			activities.forEach(function(activity) {
-				var newAct = new Activity();
 				activity = activity.snippet;
+				var newAct = new Activity();
 				newAct.name = activity.title;
 				newAct.user = user;
 				newAct.date = activity.publishedAt;
 				newAct.channelName = channel.name;
 				newAct.channelID = channel._id;
+				// Sets the expiration date of the activitiy to one week from when it was created
+				var expDate = new Date(activity.publishedAt);
+				expDate = expDate.getTime() + 1000 * 60 * 60 * 24 * 7;
+				expDate = new Date(expDate);
+				newAct.expireAt = expDate;
 				newAct.save();
-				channel.activities.push(newAct);
+				channel.activities.push(newAct);	
 				index++;
 			});
 		}
-		if (stackSize == index) {
+		if (stackSize <= index) {
 			callback(channel);
 		}
 	});
@@ -261,23 +266,24 @@ router.get("/api/auth/youtube", isAuthenticated, passport.authenticate("youtube"
 		if (req.error) {
 			console.log(req.error);
 			res.status(400);
+		} else {
+			// Establishes a connection with YouTube's API
+			// Call any Youtube API endpoint with 'YouTube.<method>'
+			YouTube.authenticate({
+				type: "oauth",
+				token: req.user.youtubeAccessToken
+			});
+			var channels = [];
+			// Gets all channels that the user is subscribed to
+			getYTSubsRecursive(null, [], 0, 0, req.session.passport.user, function(userChannels) {
+				// Adds all channels to the database
+				if (userChannels) {
+					saveChannels(userChannels, req.user, function(user) {
+						res.status(201).json(user);
+					});
+				}
+			});
 		}
-		// Establishes a connection with YouTube's API
-		// Call any Youtube API endpoint with 'YouTube.<method>'
-		YouTube.authenticate({
-			type: "oauth",
-			token: req.user.youtubeAccessToken
-		});
-		var channels = [];
-		// Gets all channels that the user is subscribed to
-		getYTSubsRecursive(null, [], 0, 0, req.session.passport.user, function(userChannels) {
-			// Adds all channels to the database
-			if (userChannels) {
-				saveChannels(userChannels, req.user, function(user) {
-					res.status(201).json(user);
-				});
-			}
-		});
 	}
 );
 
@@ -376,6 +382,35 @@ router.get("/api/auth/twitch", isAuthenticated, passport.authenticate("twitch"),
 * Channels *
 ***********/
 
+// GET a refresh of all information (May take a little while... Lots of promises)
+router.get("/api/refresh", isAuthenticated, function(req, res) {
+	var user = req.session.passport.user;
+	// Deletes all the users current channels
+	User.update({_id: user}, {$set: {channels: []}}, 
+		function(err, user) {
+			if (err) {
+				console.log(err);
+			}
+			// Establishes a connection with YouTube's API
+			// Call any Youtube API endpoint with 'YouTube.<method>'
+			var ytKey = user.youtubeAccessToken;
+			YouTube.authenticate({
+				type: "oauth",
+				token: req.user.youtubeAccessToken
+			});
+			var channels = [];
+			// Gets all channels that the user is subscribed to
+			getYTSubsRecursive(null, [], 0, 0, req.session.passport.user, function(userChannels) {
+				// Adds all channels to the database
+				if (userChannels) {
+					saveChannels(userChannels, req.user, function(user) {
+						res.status(201).json(user);
+					});
+				}
+		});
+	});
+});
+
 // Helper function to recursively get all of the tag names 
 function getTagsRecursive(channels, stackSize, index, processed, user, callback) {
 	if (stackSize >= index) {
@@ -388,6 +423,7 @@ function getTagsRecursive(channels, stackSize, index, processed, user, callback)
 			for (var i = 0; i < tags.length; i++) {
 				tags[i] = tags[i].name;
 			}
+			// Changes the objectid's to tagnames
 			channel.tags = tags;
 			processed.push(channel);
 			if (stackSize == index) {
@@ -406,6 +442,7 @@ function getActivitiesRecursive(channels, stackSize, index, processed, user, cal
 			if (err) {
 				console.log(err);
 			}
+			// Chanes the activity objectid's to activity names
 			channel.activities = activities;
 			processed.push(channel);
 			if (stackSize == index) {
@@ -432,7 +469,9 @@ router.get("/api/channels", isAuthenticated, function(req, res) {
 	var user = req.session.passport.user;
 	Channel.find({user: user}, function(err, channels) {
 		if (channels.length) {
+			// Changes the tag objectid's to tag names			
 			getTagsRecursive(channels, channels.length - 1, 0, [], user, function(processed) {
+				// Changes the activities objectid's to activity names
 				getActivitiesRecursive(processed, processed.length - 1, 0, [], user, function(results) {
 					res.status(200).json({channels: results});
 				});
@@ -447,7 +486,9 @@ router.get("/api/channels", isAuthenticated, function(req, res) {
 router.get("/api/channels/:channelID", isAuthenticated, function(req, res) {
 	var user = req.session.passport.user;
 	Channel.findOne({_id: res.channel._id, user: user}, function(err, channel) {
+		// Changes the tag objectid's to tag names
 		getTagsRecursive([channel], 0, 0, [], user, function(processed) {
+			// Changes the activities objectid's to activity names
 			getActivitiesRecursive([processed[0]], 0, 0, [], user, function(results) {
 				res.status(200).json({channel: results[0]})
 			});
@@ -492,13 +533,15 @@ function getChannelsRecursive(tags, stackSize, index, processed, user, callback)
 			if (err) {
 				console.log(err);
 			}
+			// Changes the channels activities to the activitiy names
 			getActivitiesRecursive(channels, channels.length - 1, 0, [], user, function(results) {
 				tag.channels = results;
 				processed.push(tag);
 				if (stackSize == index) {
 					callback(processed);
+				} else {
+					getChannelsRecursive(tags, stackSize, index + 1, processed, user, callback);
 				}
-				getChannelsRecursive(tags, stackSize, index + 1, processed, user, callback);
 			});
 		});
 	}
@@ -545,6 +588,7 @@ router.post("/api/tags", isAuthenticated, function(req, res) {
 					console.log(channel);
 					res.status(200).json({error: "Tag already exists"});
 				} else {
+					// If tag existed already
 					channel = req.body.channel;
 					Channel.findOne({_id: channel._id, user: user}, function(err, newChannel) {
 						if (err) {
@@ -567,7 +611,7 @@ router.post("/api/tags", isAuthenticated, function(req, res) {
 				}
 			});
 		} else {
-			// If tag is brand new
+			// If tag is brand new, create it
 			var tag = new Tags();
 			tag.name = req.body.tag;
 			tag.user = req.session.passport.user;
@@ -593,6 +637,19 @@ router.post("/api/tags", isAuthenticated, function(req, res) {
 	});
 });
 
+// DELETE a given tag
+router.delete("/api/tags/:tagID", isAuthenticated, function(req, res) {
+	var tag = res.tag;
+	var channel = req.body.channel;
+	Channel.findOne({_id: channel._id}, function(err, channel) {
+		if (err) {
+			console.log(err);
+		}
+		tag.channels.remove(channel);
+		channel.tags.remove(tag);
+	});
+});
+
 /************
 * Favorites *
 ************/
@@ -602,8 +659,10 @@ router.get("/api/favorites", isAuthenticated, function(req, res) {
 	var user = req.session.passport.user;
 	Channel.find({favorite: true, user: user}, function(err, channels) {
 		if (channels.length) {
+			// Changes the tag objectid's to tagnames
 			getTagsRecursive(channels, channels.length - 1, 0, [], user, function(processed) {
 				channels = processed;
+				// Changes the activity objectid's to activity names
 				getActivitiesRecursive(channels, channels.length - 1, 0, [], user, function(results) {
 					res.status(200).json({favorites: results});
 				});
