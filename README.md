@@ -24,9 +24,9 @@ This app was developed using the MEAN stack and deployed on an AWS instance runn
 * `POST /api/users/` - Adds a new user
 * *`POST /api/users/[userID]/addusername` - Adds an external account username to the current account
 * *`GET /api/auth/youtube` - Authorizes users YouTube account to be used with this account (redirects to YouTube)
-* *`GET /api/auth/twitch` - Authorizes users Twitch.tv account to be used with this account (redirects to Twitch.tv)
 
 ### Channel Information
+* *`GET /api/refresh` - Refreshes all channels/activities to current information
 * *`GET /api/channels` - Lists all of a users followed/subscribed channels
 * *`GET /api/channels/[channelID]` - Lists a channels details
 
