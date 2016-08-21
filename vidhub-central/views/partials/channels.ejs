@@ -24,7 +24,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							<tr ng-repeat="channel in channels | orderBy: 'name' | filter: searchTerm">
+							<tr ng-repeat="channel in channels | orderBy: 'name' | filter: searchTerm | unique: 'name'">
 								<td ng-click="openModal(channel)" class="clickable-row">{{channel.name}}</td>
 								<td ng-click="openModal(channel)" class="clickable-row">{{channel.activities.length}}
 								<td ng-click="openModal(channel)" class="clickable-row">{{channel.type}}</td>

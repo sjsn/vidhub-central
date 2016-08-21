@@ -42,8 +42,7 @@ passport.use("login", new LocalStrategy({
 passport.use("youtube", new YouTubeStrategy({
 		clientID: secret.youtube.ID,
 		clientSecret: secret.youtube.secret,
-		// Just for testing. Change when live
-		callbackURL: "http://localhost:8080/api/auth/youtube"
+		callbackURL: "http://sjsn.info344.com/api/auth/youtube"
 	},
 	function(accessToken, refreshToken, profile, done) {
 		// Compares the twitch profile name with the users registered profile name

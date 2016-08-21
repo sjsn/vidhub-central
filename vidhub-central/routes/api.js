@@ -263,27 +263,22 @@ function saveChannels(channels, user, done) {
 // GET the youtube authorization information and relevent channel data
 router.get("/api/auth/youtube", isAuthenticated, passport.authenticate("youtube"),
 	function(req, res) {
-		if (req.error) {
-			console.log(req.error);
-			res.status(400);
-		} else {
-			// Establishes a connection with YouTube's API
-			// Call any Youtube API endpoint with 'YouTube.<method>'
-			YouTube.authenticate({
-				type: "oauth",
-				token: req.user.youtubeAccessToken
-			});
-			var channels = [];
-			// Gets all channels that the user is subscribed to
-			getYTSubsRecursive(null, [], 0, 0, req.session.passport.user, function(userChannels) {
-				// Adds all channels to the database
-				if (userChannels) {
-					saveChannels(userChannels, req.user, function(user) {
-						res.status(201).json(user);
-					});
-				}
-			});
-		}
+		// Establishes a connection with YouTube's API
+		// Call any Youtube API endpoint with 'YouTube.<method>'
+		YouTube.authenticate({
+			type: "oauth",
+			token: req.user.youtubeAccessToken
+		});
+		var channels = [];
+		// Gets all channels that the user is subscribed to
+		getYTSubsRecursive(null, [], 0, 0, req.session.passport.user, function(userChannels) {
+			// Adds all channels to the database
+			if (userChannels) {
+				saveChannels(userChannels, req.user, function(user) {
+					res.redirect("/#/feed");
+				});
+			}
+		});
 	}
 );
 
@@ -391,6 +386,10 @@ router.get("/api/refresh", isAuthenticated, function(req, res) {
 			if (err) {
 				console.log(err);
 			}
+			// Deletes the current added channels (also removes favorites/tags)
+
+			// Deltes any current activities
+			
 			// Establishes a connection with YouTube's API
 			// Call any Youtube API endpoint with 'YouTube.<method>'
 			var ytKey = user.youtubeAccessToken;

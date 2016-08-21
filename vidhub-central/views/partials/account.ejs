@@ -12,7 +12,7 @@
 			<p><span class="acct-title">VidHub Central Username:</span> {{user.username}}</p>
 			<p><span class="acct-title">First Name:</span> {{user.firstName}}</p>
 			<p><span class="acct-title">Last Name:</span> {{user.lastName}}</p>
-			<p><span class="acct-title">YouTube Username:</span> <span ng-show="user.youtubeUsername">{{user.youtubeUsername}} <i class="fa fa-check-circle-o verified" aria-hidden="true" ng-if="user.youtubeAccessToken"></i><i class="fa fa-times-circle-o not-verified" aria-hidden="true" ng-if="!user.youtubeAccessToken"></i>      <a class="btn yt-btn" href="/api/auth/youtube" ><i class="fa fa-youtube-play" aria-hidden="true"></i>    Verify YouTube Account</a></span><span ng-hide="user.youtubeUsername">YouTube Account not linked</span></p>
+			<p><span class="acct-title">YouTube Username:</span> <span ng-show="user.youtubeUsername">{{user.youtubeUsername}} <i class="fa fa-check-circle-o verified" aria-hidden="true" ng-if="user.youtubeAccessToken"></i><i class="fa fa-times-circle-o not-verified" aria-hidden="true" ng-if="!user.youtubeAccessToken"></i>      <a class="btn yt-btn" href="/api/auth/youtube" ng-if="user.youtubeUsername && !user.youtubeAccessToken"><i class="fa fa-youtube-play" aria-hidden="true"></i>    Verify YouTube Account</a></span><span ng-hide="user.youtubeUsername">YouTube Account not linked</span></p>
 			<p><span class="acct-title">Twitch.Tv Username:</span> <span ng-show="user.twitchUsername">{{user.twitchUsername}} <i class="fa fa-check-circle-o verified" aria-hidden="true" ng-if="user.twitchAccessToken"></i><i class="fa fa-times-circle-o not-verified" aria-hidden="true" ng-if="!user.twitchAccessToken"></i>     <a class="btn tw-btn" href="/api/auth/twitch" ng-if="user.twitchUsername && !user.twitchAccessToken"><i class="fa fa-twitch" aria-hidden="true"></i>     Verify Twitch.tv Account</a></span><span ng-hide="user.twitchUsername">Twitch.tv Account not linked</span></p>
 		</div>
 		<div class="login-form" ng-if="!user.twitchUsername || !user.youtubeUsername">
@@ -35,5 +35,3 @@
 		</div>
 	</section>
 </main>
-
-<!-- ng-if="user.youtubeUsername && !user.youtubeAccessToken" -->
